@@ -29,6 +29,18 @@ function provider(key: string) {
   return createOpenAI({ apiKey: key });
 }
 
+function openAiOptions(model: string) {
+  // GPT-5 and reasoning models support reasoning effort. Other OpenAI models,
+  // such as gpt-4.1-mini, may reject this option.
+  const reasoningModel = /^(gpt-5|gpt-6|o[1-9])/.test(model);
+  return {
+    openai: {
+      store: false,
+      ...(reasoningModel ? { reasoningEffort: "low" as const } : {}),
+    },
+  };
+}
+
 function logFailure(action: string, error: unknown): void {
   // Do not log credentials, prompts, document content or raw provider errors.
   const candidate = error && typeof error === "object"
@@ -54,7 +66,7 @@ export async function aiText(system: string, prompt: string, options: Generation
       model: provider(key).responses(model),
       system,
       prompt: prompt.slice(0, MAX_INPUT_CHARS),
-      providerOptions: { openai: { store: false, reasoningEffort: "low" } },
+      providerOptions: openAiOptions(model),
       maxOutputTokens: budget(options.maxOutputTokens, 2200, 3000),
       maxRetries: 1,
       timeout: 60_000,
@@ -82,7 +94,7 @@ export async function aiObject<T>(
       system,
       prompt: prompt.slice(0, MAX_INPUT_CHARS),
       output: Output.object({ schema }),
-      providerOptions: { openai: { store: false, reasoningEffort: "low" } },
+      providerOptions: openAiOptions(model),
       maxOutputTokens: budget(options.maxOutputTokens, 2700, 3600),
       maxRetries: 1,
       timeout: 70_000,
