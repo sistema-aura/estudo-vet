@@ -10,33 +10,132 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAnotacoesRouteImport } from './routes/_authenticated/anotacoes'
+import { Route as AuthenticatedDicionarioRouteImport } from './routes/_authenticated/dicionario'
+import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedTutorRouteImport } from './routes/_authenticated/tutor'
+import { Route as AuthenticatedMateriaisIndexRouteImport } from './routes/_authenticated/materiais.index'
+import { Route as AuthenticatedMateriaisIdRouteImport } from './routes/_authenticated/materiais.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAnotacoesRoute = AuthenticatedAnotacoesRouteImport.update({
+  id: '/anotacoes',
+  path: '/anotacoes',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDicionarioRoute = AuthenticatedDicionarioRouteImport.update({
+  id: '/dicionario',
+  path: '/dicionario',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTutorRoute = AuthenticatedTutorRouteImport.update({
+  id: '/tutor',
+  path: '/tutor',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMateriaisIndexRoute =
+  AuthenticatedMateriaisIndexRouteImport.update({
+    id: '/materiais/',
+    path: '/materiais/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMateriaisIdRoute =
+  AuthenticatedMateriaisIdRouteImport.update({
+    id: '/materiais/$id',
+    path: '/materiais/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/anotacoes': typeof AuthenticatedAnotacoesRoute
+  '/dicionario': typeof AuthenticatedDicionarioRoute
+  '/painel': typeof AuthenticatedPainelRoute
+  '/tutor': typeof AuthenticatedTutorRoute
+  '/materiais/$id': typeof AuthenticatedMateriaisIdRoute
+  '/materiais/': typeof AuthenticatedMateriaisIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/anotacoes': typeof AuthenticatedAnotacoesRoute
+  '/dicionario': typeof AuthenticatedDicionarioRoute
+  '/painel': typeof AuthenticatedPainelRoute
+  '/tutor': typeof AuthenticatedTutorRoute
+  '/materiais/$id': typeof AuthenticatedMateriaisIdRoute
+  '/materiais': typeof AuthenticatedMateriaisIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/anotacoes': typeof AuthenticatedAnotacoesRoute
+  '/_authenticated/dicionario': typeof AuthenticatedDicionarioRoute
+  '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/tutor': typeof AuthenticatedTutorRoute
+  '/_authenticated/materiais/$id': typeof AuthenticatedMateriaisIdRoute
+  '/_authenticated/materiais/': typeof AuthenticatedMateriaisIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/anotacoes'
+    | '/dicionario'
+    | '/painel'
+    | '/tutor'
+    | '/materiais/$id'
+    | '/materiais/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/anotacoes'
+    | '/dicionario'
+    | '/painel'
+    | '/tutor'
+    | '/materiais/$id'
+    | '/materiais'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/anotacoes'
+    | '/_authenticated/dicionario'
+    | '/_authenticated/painel'
+    | '/_authenticated/tutor'
+    | '/_authenticated/materiais/$id'
+    | '/_authenticated/materiais/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +147,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/anotacoes': {
+      id: '/_authenticated/anotacoes'
+      path: '/anotacoes'
+      fullPath: '/anotacoes'
+      preLoaderRoute: typeof AuthenticatedAnotacoesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dicionario': {
+      id: '/_authenticated/dicionario'
+      path: '/dicionario'
+      fullPath: '/dicionario'
+      preLoaderRoute: typeof AuthenticatedDicionarioRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/painel': {
+      id: '/_authenticated/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tutor': {
+      id: '/_authenticated/tutor'
+      path: '/tutor'
+      fullPath: '/tutor'
+      preLoaderRoute: typeof AuthenticatedTutorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/materiais/': {
+      id: '/_authenticated/materiais/'
+      path: '/materiais'
+      fullPath: '/materiais/'
+      preLoaderRoute: typeof AuthenticatedMateriaisIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/materiais/$id': {
+      id: '/_authenticated/materiais/$id'
+      path: '/materiais/$id'
+      fullPath: '/materiais/$id'
+      preLoaderRoute: typeof AuthenticatedMateriaisIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAnotacoesRoute: typeof AuthenticatedAnotacoesRoute
+  AuthenticatedDicionarioRoute: typeof AuthenticatedDicionarioRoute
+  AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedTutorRoute: typeof AuthenticatedTutorRoute
+  AuthenticatedMateriaisIdRoute: typeof AuthenticatedMateriaisIdRoute
+  AuthenticatedMateriaisIndexRoute: typeof AuthenticatedMateriaisIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAnotacoesRoute: AuthenticatedAnotacoesRoute,
+  AuthenticatedDicionarioRoute: AuthenticatedDicionarioRoute,
+  AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedTutorRoute: AuthenticatedTutorRoute,
+  AuthenticatedMateriaisIdRoute: AuthenticatedMateriaisIdRoute,
+  AuthenticatedMateriaisIndexRoute: AuthenticatedMateriaisIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,69 @@
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { BookOpen, BookA, LayoutDashboard, LogOut, MessageCircleQuestion, NotebookPen, PawPrint, Stethoscope } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/_authenticated")({
+  component: Layout,
+});
+
+const nav = [
+  { to: "/painel", label: "Painel", icon: LayoutDashboard },
+  { to: "/materiais", label: "Materiais", icon: BookOpen },
+  { to: "/anotacoes", label: "Anotações", icon: NotebookPen },
+  { to: "/dicionario", label: "Dicionário", icon: BookA },
+  { to: "/tutor", label: "Tutor IA", icon: MessageCircleQuestion },
+] as const;
+
+function Layout() {
+  const { session, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !session) navigate({ to: "/auth" });
+  }, [loading, session, navigate]);
+
+  if (loading || !session) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">A carregar…</div>;
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <aside className="bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0">
+        <div className="flex items-center gap-2 px-5 py-5">
+          <PawPrint className="h-6 w-6 text-sidebar-primary" />
+          <span className="font-display text-xl font-bold">VetEstudo</span>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:pb-0">
+          {nav.map((n) => (
+            <Link
+              key={n.to}
+              to={n.to}
+              className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-sidebar-accent"
+              activeProps={{ className: "bg-sidebar-accent text-sidebar-primary" }}
+            >
+              <n.icon className="h-4 w-4" />
+              {n.label}
+            </Link>
+          ))}
+          <div
+            className="flex shrink-0 cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm opacity-50"
+            title="Em breve"
+          >
+            <Stethoscope className="h-4 w-4" /> Ficha do paciente <span className="text-xs">(em breve)</span>
+          </div>
+        </nav>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="mx-3 mb-4 hidden items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent md:absolute md:bottom-0 md:flex"
+        >
+          <LogOut className="h-4 w-4" /> Sair
+        </button>
+      </aside>
+      <main className="flex-1 px-5 py-8 md:px-10">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
