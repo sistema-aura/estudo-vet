@@ -7,6 +7,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 const nav = [
   { to: "/painel", label: "Painel", icon: LayoutDashboard },
+  { to: "/biblioteca", label: "Biblioteca", icon: BookOpen },
   { to: "/materiais", label: "Materiais", icon: BookOpen },
   { to: "/anotacoes", label: "Anotações", icon: NotebookPen },
   { to: "/dicionario", label: "Dicionário", icon: BookA },
