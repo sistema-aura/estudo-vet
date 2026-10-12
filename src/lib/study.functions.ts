@@ -55,7 +55,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
 
 export const askTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { question: string; materialId?: string }) =>
+  .inputValidator((d: { question: string; materialId?: string | undefined }) =>
     z.object({ question: z.string().min(1).max(4000), materialId: z.string().uuid().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {

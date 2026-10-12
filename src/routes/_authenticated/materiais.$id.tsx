@@ -69,7 +69,7 @@ function MaterialPage() {
   async function addNote() {
     if (!note.trim()) return;
     const { error } = await supabase.from("notes").insert({ material_id: id, title: m?.title ?? "Nota", content: note });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setNote("");
     qc.invalidateQueries({ queryKey: ["notes", id] });
   }

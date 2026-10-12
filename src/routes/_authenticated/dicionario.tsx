@@ -37,7 +37,7 @@ function Dicionario() {
   async function add() {
     if (!term.trim()) return;
     const { error } = await supabase.from("glossary").insert({ term: term.trim(), definition: def.trim() });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setTerm("");
     setDef("");
     setOpen(false);

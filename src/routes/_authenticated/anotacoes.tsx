@@ -27,7 +27,7 @@ function Anotacoes() {
   async function save() {
     if (!content.trim()) return;
     const { error } = await supabase.from("notes").insert({ title: title || "Sem título", content });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setTitle("");
     setContent("");
     qc.invalidateQueries({ queryKey: ["notes"] });
