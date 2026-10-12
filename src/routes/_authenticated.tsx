@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BookOpen, BookA, GraduationCap, Bone, LayoutDashboard, MessageCircleQuestion, NotebookPen, PawPrint, Stethoscope } from "lucide-react";
+import { BookOpen, BookA, GraduationCap, Bone, ClipboardCheck, LayoutDashboard, MessageCircleQuestion, NotebookPen, PawPrint, Stethoscope } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: Layout,
@@ -12,6 +12,7 @@ const nav = [
   { to: "/dicionario", label: "Dicionário", icon: BookA },
   { to: "/estudo", label: "Plano e flashcards", icon: GraduationCap },
   { to: "/atlas", label: "Atlas anatómico", icon: Bone },
+  { to: "/exames", label: "Exames simulados", icon: ClipboardCheck },
   { to: "/tutor", label: "Tutor IA", icon: MessageCircleQuestion },
 ] as const;
 
