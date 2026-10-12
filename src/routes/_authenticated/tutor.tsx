@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Send, Copy, Sparkles, MessageCircleQuestion, RotateCcw } from "lucide-react";
+import { Send, Copy, Sparkles, MessageCircleQuestion, RotateCcw, Activity, CircleAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { askTutor } from "@/lib/study.functions";
+import { askTutor, checkAiConnection } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,14 +24,37 @@ const suggestions = [
 
 function Tutor() {
   const ask = useServerFn(askTutor);
+  const diagnose = useServerFn(checkAiConnection);
   const [question, setQuestion] = useState("");
   const [materialId, setMaterialId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [status, setStatus] = useState<"idle" | "ready" | "failed">("idle");
+  const [aiError, setAiError] = useState("");
   const [history, setHistory] = useState<{ q: string; a: string }[]>([]);
-  const { data: materials = [] } = useQuery({
+  const { data: materials = [], isError: materialError } = useQuery({
     queryKey: ["materials", "tutor-picker"],
     queryFn: async () => (await supabase.from("materials").select("id,title,subject").order("title")).data ?? [],
   });
+
+  async function testConnection() {
+    if (checking || busy) return;
+    setChecking(true);
+    setAiError("");
+    try {
+      const result = await diagnose();
+      if (!result.ok) throw new Error("O serviço de IA não confirmou o funcionamento.");
+      setStatus("ready");
+      toast.success("A ligação à IA está operacional.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível verificar a ligação à IA.";
+      setAiError(message);
+      setStatus("failed");
+      toast.error(message);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   async function copyAnswer(answer: string) {
     try { await window.navigator.clipboard.writeText(answer); toast.success("Resposta copiada."); }
@@ -41,12 +64,19 @@ function Tutor() {
   async function send() {
     if (!question.trim() || busy) return;
     setBusy(true);
+    setAiError("");
+    const asked = question.trim();
     try {
-      const { answer } = await ask({ data: { question: question.trim(), materialId: materialId || undefined, history: history.slice(0, 6).reverse() } });
-      setHistory(prev => [{ q: question.trim(), a: answer }, ...prev]);
+      const { answer } = await ask({ data: { question: asked, materialId: materialId || undefined, history: history.slice(0, 6).reverse() } });
+      if (!answer?.trim()) throw new Error("A IA não devolveu uma resposta. Tenta novamente.");
+      setStatus("ready");
+      setHistory(prev => [{ q: asked, a: answer }, ...prev]);
       setQuestion("");
-    } catch (e: any) {
-      toast.error(e.message ?? "Falha ao obter resposta");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao obter resposta da IA.";
+      setAiError(message);
+      setStatus("failed");
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -57,6 +87,16 @@ function Tutor() {
       <div className="flex items-start gap-4"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><MessageCircleQuestion className="h-6 w-6"/></span><div><h1 className="text-3xl font-bold">Tutor IA</h1><p className="mt-1 text-muted-foreground">Faz uma pergunta. Escolhe um PDF para a resposta se basear nele, ou usa o conhecimento geral.</p></div></div>
       <div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed text-muted-foreground">As respostas podem conter erros. Confirma sempre informação clínica e farmacológica em fontes veterinárias fiáveis. O tutor é uma ferramenta de estudo, não um serviço de diagnóstico.</div>
       {history.length === 0 && <section className="mt-6 space-y-3"><h2 className="flex items-center gap-2 text-sm font-bold"><Sparkles className="h-4 w-4 text-primary"/> Precisas de inspiração?</h2><div className="grid gap-2 sm:grid-cols-2">{suggestions.map(text => <button type="button" key={text} onClick={() => setQuestion(text)} className="rounded-xl border bg-card p-4 text-left text-sm transition hover:border-primary/60 hover:bg-muted">{text}</button>)}</div></section>}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
+        <div className="flex items-center gap-2 text-sm"><Activity className="h-4 w-4 text-primary"/>
+          <span>{status === "ready" ? "Último teste da IA: operacional" : status === "failed" ? "Último pedido à IA: falhou" : "Ligação à IA ainda não testada nesta sessão"}</span>
+        </div>
+        <Button variant="outline" size="sm" disabled={checking || busy} onClick={() => void testConnection()}>
+          {checking ? "A verificar…" : "Testar ligação IA"}
+        </Button>
+      </div>
+      {aiError && <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"><CircleAlert className="mt-0.5 h-4 w-4 shrink-0"/>{aiError}</p>}
+      {materialError && <p role="alert" className="mt-3 text-sm text-muted-foreground">Não foi possível carregar a lista de PDFs. Podes continuar a usar o tutor sem selecionar um documento.</p>}
       <div className="mt-6 space-y-3 rounded-2xl border bg-card p-5">
         <select
           value={materialId}
