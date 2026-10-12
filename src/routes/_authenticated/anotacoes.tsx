@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/anotacoes")({
 type Tool = "pen" | "highlighter" | "eraser" | "hand";
 type Stroke = { points: { x: number; y: number }[]; color: string; width: number; tool: Tool };
 type Page = { strokes: Stroke[] };
+type Paper = "lines" | "grid" | "dots" | "blank";
 const COLORS = ["#063b3b", "#159c74", "#2563eb", "#dc2626", "#7c3aed", "#f59e0b", "#111827"];
 const KEY = "vetestudo-caderno-v1";
 const W = 1000, H = 1414;
@@ -23,11 +24,13 @@ function readPages(): Page[] {
   } catch {}
   return [{ strokes: [] }];
 }
-function draw(ctx: CanvasRenderingContext2D, strokes: Stroke[], active?: Stroke) {
+function draw(ctx: CanvasRenderingContext2D, strokes: Stroke[], active?: Stroke, paper: Paper = "lines") {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = "#e9eef0"; ctx.lineWidth = 1;
-  for (let y = 70; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(45, y); ctx.lineTo(W - 45, y); ctx.stroke(); }
+  if (paper === "lines" || paper === "grid") for (let y = 70; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(45, y); ctx.lineTo(W - 45, y); ctx.stroke(); }
+  if (paper === "grid") for (let x = 45; x < W - 45; x += 40) { ctx.beginPath(); ctx.moveTo(x, 45); ctx.lineTo(x, H - 45); ctx.stroke(); }
+  if (paper === "dots") { ctx.fillStyle = "#cbd5e1"; for (let y = 70; y < H - 45; y += 40) for (let x = 45; x < W - 45; x += 40) { ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill(); } }
   for (const s of [...strokes, ...(active ? [active] : [])]) {
     if (!s.points.length) continue;
     ctx.save();
@@ -52,12 +55,14 @@ function Anotacoes() {
   const [stylusOnly, setStylusOnly] = useState(false);
   const [redo, setRedo] = useState<Stroke[]>([]);
   const [zoom, setZoom] = useState(100);
-  const [title, setTitle] = useState("O meu caderno");
+  const [title, setTitle] = useState(() => { try { return localStorage.getItem("vetestudo-caderno-title") || "O meu caderno"; } catch { return "O meu caderno"; } });
+  const [paper, setPaper] = useState<Paper>("lines");
+  useEffect(() => { try { localStorage.setItem("vetestudo-caderno-title", title); } catch {} }, [title]);
   const current = pages[page]?.strokes ?? [];
   useEffect(() => {
     const ctx = canvas.current?.getContext("2d");
-    if (ctx) draw(ctx, current, active.current ?? undefined);
-  }, [pages, page]);
+    if (ctx) draw(ctx, current, active.current ?? undefined, paper);
+  }, [pages, page, paper]);
   useEffect(() => {
     try { localStorage.setItem(KEY, JSON.stringify(pages)); } catch { toast.error("Sem espaço para guardar o caderno neste dispositivo."); }
   }, [pages]);
@@ -76,7 +81,7 @@ function Anotacoes() {
     e.preventDefault();
     active.current.points.push(point(e));
     const ctx = canvas.current?.getContext("2d");
-    if (ctx) draw(ctx, current, active.current);
+    if (ctx) draw(ctx, current, active.current, paper);
   }
   function up() {
     const stroke = active.current; active.current = null;
@@ -113,6 +118,7 @@ function Anotacoes() {
       {([["pen",Pen,"Caneta"],["highlighter",Highlighter,"Marcador"],["eraser",Eraser,"Borracha"],["hand",Hand,"Mover"]] as const).map(([id,Icon,label]) =>
         <Button key={id} type="button" variant={tool === id ? "default" : "outline"} size="sm" onClick={() => setTool(id)} title={label} aria-label={label}><Icon className="h-4 w-4" /></Button>)}
       <span className="mx-1 h-6 border-l" />
+      <select aria-label="Tipo de folha" value={paper} onChange={e => setPaper(e.target.value as Paper)} className="rounded-md border bg-background px-2 py-2 text-sm"><option value="lines">Pautada</option><option value="grid">Quadriculada</option><option value="dots">Pontilhada</option><option value="blank">Branca</option></select>
       {COLORS.map(c => <button key={c} type="button" aria-label={`Cor ${c}`} onClick={() => setColor(c)} style={{ background: c, outline: color === c ? "2px solid currentColor" : "none", outlineOffset: 3 }} className="h-7 w-7 rounded-full border border-black/10" />)}
       <input aria-label="Espessura" type="range" min="1" max="18" value={width} onChange={e => setWidth(Number(e.target.value))} className="w-24 accent-primary" />
       <Button size="sm" variant="outline" onClick={undo} disabled={!current.length} aria-label="Desfazer"><Undo2 className="h-4 w-4" /></Button>
@@ -134,6 +140,7 @@ function Anotacoes() {
       <div className="flex items-center gap-2">
         <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.max(75, z - 25))}><Minus className="h-4 w-4" /></Button><span className="text-xs">{zoom}%</span>
         <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.min(200, z + 25))}><Plus className="h-4 w-4" /></Button>
+        <Button size="sm" variant="outline" onClick={() => { setPages(old => [...old.slice(0,page+1), { strokes: current.map(s => ({ ...s, points: s.points.map(p => ({...p})) })) }, ...old.slice(page+1)]); setPage(p => p+1); setRedo([]); }}>Duplicar página</Button>
         <Button size="sm" variant="outline" onClick={download}><Download className="mr-1 h-4 w-4" /> PNG</Button>
         <Button size="sm" variant="outline" onClick={() => { if (confirm("Limpar esta página?")) { setPages(old => old.map((p,i) => i === page ? { strokes: [] } : p)); setRedo([]); } }}><RotateCcw className="h-4 w-4" /></Button>
         <Button size="sm" variant="outline" onClick={() => { if (confirm("Eliminar esta página?")) { setPages(old => old.length === 1 ? [{ strokes: [] }] : old.filter((_,i) => i !== page)); setPage(p => Math.max(0,p-1)); setRedo([]); } }}><Trash2 className="h-4 w-4" /></Button>
