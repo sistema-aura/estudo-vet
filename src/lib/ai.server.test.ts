@@ -45,7 +45,7 @@ describe("API OpenAI direta, com chave apenas no servidor", () => {
     expect(text).toBe("Teste concluído");
     expect(mocks.providerOptions).toHaveBeenCalledWith({ apiKey: "test-placeholder-not-a-real-key" });
     expect(mocks.modelName).toHaveBeenCalledWith("gpt-5-mini");
-    expect(mocks.generate.mock.calls[0]?.[0].providerOptions.openai.store).toBe(false);
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ providerOptions: { openai: { store: false, reasoningEffort: "low" } } }));
     expect(mocks.checkLimit).toHaveBeenCalledTimes(1);
   });
 
@@ -54,7 +54,7 @@ describe("API OpenAI direta, com chave apenas no servidor", () => {
     mocks.generate.mockResolvedValue({ text: "OK" });
     await aiText("Tutor", "Teste", { maxOutputTokens: 64 });
     expect(mocks.modelName).toHaveBeenCalledWith("gpt-4.1-mini");
-    expect(mocks.generate.mock.calls[0]?.[0].maxOutputTokens).toBe(64);
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 64 }));
   });
 
   it("rejeita uma chave em falta sem efetuar chamadas externas", async () => {
@@ -68,6 +68,6 @@ describe("API OpenAI direta, com chave apenas no servidor", () => {
     const result = await aiObject("Tutor", "Gera um cartão",
       z.object({ cards: z.array(z.object({ question: z.string(), answer: z.string() })) }));
     expect(result.cards).toHaveLength(1);
-    expect(mocks.generate.mock.calls[0]?.[0].output.schema).toBeDefined();
+    expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ output: expect.objectContaining({ schema: expect.anything() }) }));
   });
 });
