@@ -20,21 +20,21 @@ export type Database = {
           definition: string
           id: string
           term: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           definition?: string
           id?: string
           term: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           definition?: string
           id?: string
           term?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -47,7 +47,7 @@ export type Database = {
           subject: string
           summary: string | null
           title: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content?: string
@@ -57,7 +57,7 @@ export type Database = {
           subject?: string
           summary?: string | null
           title: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -67,7 +67,7 @@ export type Database = {
           subject?: string
           summary?: string | null
           title?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -79,7 +79,7 @@ export type Database = {
           material_id: string | null
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content?: string
@@ -88,7 +88,7 @@ export type Database = {
           material_id?: string | null
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -97,7 +97,7 @@ export type Database = {
           material_id?: string | null
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

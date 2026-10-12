@@ -1,0 +1,11 @@
+ALTER TABLE public.materials ALTER COLUMN user_id DROP NOT NULL, ALTER COLUMN user_id DROP DEFAULT;
+ALTER TABLE public.notes ALTER COLUMN user_id DROP NOT NULL, ALTER COLUMN user_id DROP DEFAULT;
+ALTER TABLE public.glossary ALTER COLUMN user_id DROP NOT NULL, ALTER COLUMN user_id DROP DEFAULT;
+DROP POLICY IF EXISTS "own materials" ON public.materials;
+DROP POLICY IF EXISTS "own notes" ON public.notes;
+DROP POLICY IF EXISTS "own glossary" ON public.glossary;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.materials, public.notes, public.glossary TO anon, authenticated;
+CREATE POLICY "open materials" ON public.materials FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "open notes" ON public.notes FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "open glossary" ON public.glossary FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "open materials files" ON storage.objects FOR ALL TO anon, authenticated USING (bucket_id = 'materials') WITH CHECK (bucket_id = 'materials');
