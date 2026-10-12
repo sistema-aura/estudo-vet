@@ -29,6 +29,7 @@ on:
       - 'src/lib/notebook.ts'
       - 'src/lib/notebook.test.ts'
       - 'src/lib/ai.server.ts'
+      - 'src/lib/ai.server.test.ts'
       - 'src/lib/ai-guard.server.ts'
       - 'README.md'
       - '.env.example'
@@ -52,6 +53,6 @@ jobs:
       - name: Install project dependencies
         run: npm install --no-audit --no-fund
       - name: Run component smoke tests
-        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx src/components/PdfReader.test.tsx src/lib/materials.test.ts src/lib/notebook.test.ts src/lib/ai-context.test.ts src/lib/ai-errors.test.ts
+        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx src/components/PdfReader.test.tsx src/lib/materials.test.ts src/lib/notebook.test.ts src/lib/ai-context.test.ts src/lib/ai-errors.test.ts src/lib/ai.server.test.ts
       - name: Type-check the application
         run: npx tsc --noEmit
