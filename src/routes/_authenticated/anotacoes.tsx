@@ -5,7 +5,7 @@ import {
   ArrowDown, ArrowUp, BookOpen, Check, ChevronLeft,
   ChevronRight, Copy, Download, Eraser, FileImage, FilePlus2, FolderPlus,
   Hand, Highlighter, Keyboard, LayoutList, NotebookPen,
-  PenLine, Plus, Redo2, RotateCcw, Save, Search, ShieldCheck,
+  PenLine, Plus, Printer, Redo2, RotateCcw, Save, Search, ShieldCheck,
   Trash2, Undo2, Upload, X, ZoomIn, ZoomOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -437,6 +437,37 @@ function Anotacoes() {
     document.body.appendChild(link); link.click(); link.remove();
     toast.success("Página exportada como imagem PNG.");
   }
+  function printNotebook() {
+    if (!notebook) return;
+    if (notebook.pages.length > 50) {
+      toast.error("A impressão está limitada a 50 páginas por operação para proteger a memória do dispositivo. Exporta uma cópia de segurança de todos os cadernos.");
+      return;
+    }
+    // Open synchronously from the button click to avoid popup blocking.
+    const preview = window.open("", "_blank");
+    if (!preview) { toast.error("Permite pop-ups para imprimir ou guardar o caderno em PDF."); return; }
+    try {
+      const escapeHtml = (text: string) => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+      const buffer = document.createElement("canvas");
+      buffer.width = PAGE_WIDTH * RESOLUTION;
+      buffer.height = PAGE_HEIGHT * RESOLUTION;
+      const pagesHtml = notebook.pages.map((sheet, index) => {
+        drawPage(buffer, sheet);
+        const src = buffer.toDataURL("image/png");
+        const notes = sheet.text.trim() ? '<section class="notes"><h2>Notas de texto · Página ' + (index+1) + '</h2><pre>' + escapeHtml(sheet.text) + '</pre></section>' : "";
+        return '<section class="sheet"><header><strong>' + escapeHtml(notebook.title) + '</strong><span>' + (index+1) + ' / ' + notebook.pages.length + ' · ' + escapeHtml(sheet.title) + '</span></header><img alt="Página do caderno" src="' + src + '"/></section>' + notes;
+      }).join("");
+      const html = '<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><title>' + escapeHtml(notebook.title) +
+        '</title><style>@page{size:A4 portrait;margin:7mm}*{box-sizing:border-box}body{margin:0;color:#102033;font:11px system-ui,Arial,sans-serif}.sheet{break-after:page;page-break-after:always;height:280mm;display:flex;flex-direction:column}.sheet header{display:flex;justify-content:space-between;gap:10px;margin-bottom:4mm}.sheet img{width:100%;max-height:266mm;object-fit:contain}.notes{white-space:normal;break-after:page;page-break-after:always;padding:12mm 6mm}.notes h2{font-size:16px}.notes pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 system-ui,Arial,sans-serif}</style></head><body>' +
+        pagesHtml + '</body></html>';
+      preview.addEventListener("load", () => { preview.focus(); preview.print(); }, { once: true });
+      preview.document.open(); preview.document.write(html); preview.document.close();
+      toast.info("Escolhe «Guardar como PDF» na janela de impressão, se quiseres um PDF.");
+    } catch {
+      preview.close();
+      toast.error("Não foi possível preparar a impressão. Tenta imprimir menos páginas.");
+    }
+  }
   function exportBackup() {
     if (!library) return;
     const blob = new Blob([JSON.stringify({ ...library, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
@@ -492,6 +523,7 @@ function Anotacoes() {
           {saveError ? <X size={14}/> : <Save size={14} className="text-primary"/>}
           {saveError ? "Sem guardar" : "Guardado neste dispositivo"}
         </span>
+        <Button variant="outline" size="sm" onClick={printNotebook}><Printer className="mr-1.5 h-4 w-4"/>Imprimir / PDF</Button>
         <Button variant="outline" size="sm" onClick={exportBackup}><Download className="mr-1.5 h-4 w-4"/>Cópia de segurança</Button>
         <input ref={importRef} type="file" accept=".json,application/json" className="sr-only" aria-label="Importar cópia de segurança dos cadernos" onChange={e => void importBackup(e.target.files?.[0])}/>
         <Button variant="outline" size="sm" disabled={importBusy} onClick={() => importRef.current?.click()}><Upload className="mr-1.5 h-4 w-4"/>Importar</Button>
