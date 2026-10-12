@@ -13,5 +13,5 @@
 
 - PDF text is extracted in the browser (pdfjs) and stored in `materials.content`; AI features read that column server-side, so the AI never needs to download files.
 - AI calls live in `src/lib/ai.server.ts` and are exposed only through authenticated server functions in `src/lib/study.functions.ts`, keeping the API key server-side.
-- App pages sit under the `_authenticated` layout route, which guards on the client session.
-- All user data tables are scoped by `user_id = auth.uid()` RLS; files are stored under `<user_id>/` in the private `materials` bucket.
+- No sign-in: app pages sit under the `_authenticated` layout without a guard (user chose a personal, login-free app); server functions use the publishable-key client.
+- Data tables and the `materials` bucket have open RLS for anon/authenticated, since there are no accounts.

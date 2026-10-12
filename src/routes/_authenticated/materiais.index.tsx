@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FileText, Search, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +15,6 @@ export const Route = createFileRoute("/_authenticated/materiais/")({
 });
 
 function Materiais() {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [subject, setSubject] = useState("");
@@ -34,13 +32,13 @@ function Materiais() {
   }, [materials, q]);
 
   async function upload(files: FileList | null) {
-    if (!files?.length || !user) return;
+    if (!files?.length) return;
     for (const file of Array.from(files)) {
       try {
         setProgress(0);
         const { extractPdfText } = await import("@/lib/pdf");
         const content = await extractPdfText(file, (p) => setProgress(p * 80));
-        const path = `${user.id}/${crypto.randomUUID()}.pdf`;
+        const path = `shared/${crypto.randomUUID()}.pdf`;
         const { error: upErr } = await supabase.storage.from("materials").upload(path, file, { contentType: "application/pdf" });
         if (upErr) throw upErr;
         setProgress(95);

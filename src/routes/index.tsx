@@ -32,7 +32,7 @@ function Landing() {
           <PawPrint className="h-6 w-6" />
           <span className="font-display text-xl font-bold">VetEstudo</span>
         </div>
-        <Button asChild variant="outline"><Link to="/auth">Entrar</Link></Button>
+        <Button asChild variant="outline"><Link to="/painel">Entrar</Link></Button>
       </header>
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 md:pt-20">
         <p className="mb-4 inline-block rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground">
@@ -45,7 +45,7 @@ function Landing() {
           Junta os PDFs do curso, tira dúvidas, gera resumos e testa-te com perguntas feitas a partir da tua própria matéria.
         </p>
         <div className="mt-8 flex gap-3">
-          <Button asChild size="lg"><Link to="/auth">Começar a estudar</Link></Button>
+          <Button asChild size="lg"><Link to="/painel">Começar a estudar</Link></Button>
         </div>
       </section>
       <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-24 sm:grid-cols-2 lg:grid-cols-3">
