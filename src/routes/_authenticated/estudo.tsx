@@ -31,6 +31,7 @@ function Estudo() {
   useEffect(() => { if (!loaded) return; try { localStorage.setItem("vetestudo-flashcards-v1", JSON.stringify(cards)); } catch { toast.error("Não foi possível guardar os flashcards neste dispositivo."); } }, [cards, loaded]);
   useEffect(() => { if (!loaded) return; try { localStorage.setItem("vetestudo-goals-v1", JSON.stringify(goals)); } catch { toast.error("Não foi possível guardar os objetivos neste dispositivo."); } }, [goals, loaded]);
   const due = cards.filter(c => (module === "Todos" || (c.module || "Geral") === module) && c.due <= Date.now()).sort((a,b) => a.due - b.due);
+  const nextCard = due[0];
   const mastered = cards.filter(c => c.interval >= 7).length;
   const goalDone = goals.filter(g => g.done).length;
 
@@ -79,9 +80,9 @@ function Estudo() {
     <section className="space-y-4 rounded-2xl border bg-card p-5">
       <h2 className="text-xl font-bold">Flashcards · {due.length} para rever</h2>
       <label className="block text-sm">Pasta / módulo<select className="mt-1 block w-full rounded-md border bg-background p-2" value={module} onChange={e => { setModule(e.target.value); setShow(null); }}><option value="Todos">Todos</option><option value="Geral">Geral</option>{catalog.modules.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}</select></label>
-      {due.length ? <div className="space-y-3 rounded-xl border p-5">
-        <p className="text-lg font-semibold">{due[0].question}</p>
-        {show === due[0].id ? <><p className="whitespace-pre-wrap">{due[0].answer}</p><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => review(due[0].id, false)}>Preciso de rever</Button><Button onClick={() => review(due[0].id, true)}>Já sei</Button></div></> : <Button onClick={() => setShow(due[0].id)}>Mostrar resposta</Button>}
+      {nextCard ? <div className="space-y-3 rounded-xl border p-5">
+        <p className="text-lg font-semibold">{nextCard.question}</p>
+        {show === nextCard.id ? <><p className="whitespace-pre-wrap">{nextCard.answer}</p><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => review(nextCard.id, false)}>Preciso de rever</Button><Button onClick={() => review(nextCard.id, true)}>Já sei</Button></div></> : <Button onClick={() => setShow(nextCard.id)}>Mostrar resposta</Button>}
       </div> : <p className="text-sm text-muted-foreground">Sem cartões pendentes. Cria cartões ou volta quando chegar a próxima revisão.</p>}
       <h3 className="font-semibold">Novo cartão</h3>
       <Input value={question} onChange={e => setQuestion(e.target.value)} placeholder="Pergunta (ex.: O que é a anamnese?)" />
