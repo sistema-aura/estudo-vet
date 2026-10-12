@@ -70,7 +70,7 @@ export const summarizeMaterial = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { aiText } = await import("./ai.server");
     const material = await getMaterial(data.id);
-    const source = pdfContext(requireText(material), 32000);
+    const source = pdfContext(requireText(material), 20000);
     const summary = await aiText(
       SYSTEM,
       "Elabora um resumo de estudo organizado em Markdown do PDF «" + material.title +
@@ -89,7 +89,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { aiObject } = await import("./ai.server");
     const material = await getMaterial(data.id);
-    const source = pdfContext(requireText(material), 26000);
+    const source = pdfContext(requireText(material), 17000);
     const result = await aiObject(
       SYSTEM,
       "Cria " + data.count + " perguntas de escolha múltipla, em português de Portugal, com exatamente quatro opções cada, " +
@@ -119,7 +119,7 @@ export const generateFlashcards = createServerFn({ method: "POST" })
       "Cria " + data.count + " flashcards curtos de perguntas e respostas a partir destes excertos do PDF «" +
       material.title + "». Cada cartão deve testar um único conceito importante. Não inventes factos e evita cartões repetidos. " +
       "Inclui nomes anatómicos corretos e diferenças entre cão e gato quando explícitas na fonte.\n\n<documento>\n" +
-      pdfContext(requireText(material), 26000) + "\n</documento>",
+      pdfContext(requireText(material), 17000) + "\n</documento>",
       flashcardSchema,
     );
     const seen = new Set<string>();
@@ -141,6 +141,7 @@ export const checkAiConnection = createServerFn({ method: "POST" })
     const response = await aiText(
       "Responde em português de Portugal, apenas com a palavra OK.",
       "Teste de comunicação do VetEstudo. Responde apenas: OK.",
+      { maxOutputTokens: 64 },
     );
     if (!response.trim()) throw new Error("O serviço não devolveu resposta.");
     return { ok: true };
@@ -162,7 +163,7 @@ export const askTutor = createServerFn({ method: "POST" })
     let context = "";
     if (data.materialId) {
       const material = await getMaterial(data.materialId);
-      const source = pdfContext(requireText(material), 26000, data.question);
+      const source = pdfContext(requireText(material), 17000, data.question);
       context =
         "Consulta os EXCERTOS do PDF de referência «" + material.title + "» antes de responder. " +
         "Se não encontrares a resposta nos excertos, declara explicitamente que o PDF fornecido não permite confirmar. " +
