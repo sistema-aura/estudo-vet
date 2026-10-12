@@ -1,4 +1,4 @@
-name: Atlas verification
+name: VetEstudo application verification
 
 on:
   push:
@@ -7,11 +7,22 @@ on:
       - 'src/components/AnatomyAtlasPro.test.tsx'
       - 'src/routes/_authenticated/atlas.tsx'
       - 'src/routes/_authenticated.tsx'
+      - 'src/routes/_authenticated/painel.tsx'
+      - 'src/routes/_authenticated/estudo.tsx'
+      - 'src/routes/_authenticated/exames.tsx'
+      - 'src/routes/_authenticated/materiais.index.tsx'
+      - 'src/routes/_authenticated/tutor.tsx'
+      - 'src/routes/index.tsx'
+      - 'src/routes/__root.tsx'
+      - 'src/styles.css'
+      - 'src/components/BrandMark.tsx'
+      - 'src/components/BrandMark.test.tsx'
+      - 'public/favicon.svg'
       - '.github/workflows/atlas-verification.yml'
   workflow_dispatch:
 
 jobs:
-  atlas:
+  app:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,7 +32,7 @@ jobs:
           node-version: '22'
       - name: Install project dependencies
         run: npm install --no-audit --no-fund
-      - name: Run atlas smoke tests
-        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx
+      - name: Run component smoke tests
+        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx
       - name: Type-check the application
         run: npx tsc --noEmit
