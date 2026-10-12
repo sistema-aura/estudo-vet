@@ -66,36 +66,36 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.975 0.012 85);
-  --foreground: oklch(0.25 0.03 170);
-  --card: oklch(0.995 0.006 85);
+  --background: oklch(0.977 0.008 250);
+  --foreground: oklch(0.23 0.038 255);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.03 170);
   --popover: oklch(0.995 0.006 85);
   --popover-foreground: oklch(0.25 0.03 170);
-  --primary: oklch(0.48 0.08 168);
+  --primary: oklch(0.51 0.185 258);
   --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.93 0.03 150);
-  --secondary-foreground: oklch(0.3 0.05 168);
-  --muted: oklch(0.945 0.015 85);
-  --muted-foreground: oklch(0.5 0.025 170);
-  --accent: oklch(0.86 0.09 65);
-  --accent-foreground: oklch(0.3 0.06 50);
+  --secondary: oklch(0.93 0.025 255);
+  --secondary-foreground: oklch(0.27 0.064 255);
+  --muted: oklch(0.945 0.014 255);
+  --muted-foreground: oklch(0.48 0.025 255);
+  --accent: oklch(0.91 0.035 252);
+  --accent-foreground: oklch(0.25 0.06 255);
   --destructive: oklch(0.577 0.2 27);
   --destructive-foreground: oklch(0.98 0.01 85);
   --success: oklch(0.6 0.13 150);
-  --border: oklch(0.89 0.02 100);
-  --input: oklch(0.89 0.02 100);
-  --ring: oklch(0.48 0.08 168);
-  --chart-1: oklch(0.48 0.08 168);
+  --border: oklch(0.9 0.013 250);
+  --input: oklch(0.9 0.013 250);
+  --ring: oklch(0.51 0.185 258);
+  --chart-1: oklch(0.51 0.185 258);
   --chart-2: oklch(0.75 0.12 65);
   --chart-3: oklch(0.6 0.1 30);
   --chart-4: oklch(0.65 0.08 220);
   --chart-5: oklch(0.7 0.1 130);
-  --sidebar: oklch(0.32 0.05 168);
+  --sidebar: oklch(0.2 0.04 255);
   --sidebar-foreground: oklch(0.95 0.015 85);
-  --sidebar-primary: oklch(0.86 0.09 65);
+  --sidebar-primary: oklch(0.69 0.14 250);
   --sidebar-primary-foreground: oklch(0.25 0.05 50);
-  --sidebar-accent: oklch(0.39 0.055 168);
+  --sidebar-accent: oklch(0.29 0.06 255);
   --sidebar-accent-foreground: oklch(0.98 0.01 85);
   --sidebar-border: oklch(0.4 0.04 168);
   --sidebar-ring: oklch(0.86 0.09 65);
@@ -103,33 +103,33 @@
 
 .dark {
   --success: oklch(0.7 0.13 150);
-  --background: oklch(0.129 0.042 264.695);
+  --background: oklch(0.155 0.029 253);
   --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
+  --card: oklch(0.205 0.035 253);
   --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
+  --popover: oklch(0.205 0.035 253);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
+  --primary: oklch(0.65 0.17 256);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --secondary: oklch(0.29 0.041 254);
   --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
+  --muted: oklch(0.27 0.037 255);
   --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
+  --accent: oklch(0.29 0.06 256);
   --accent-foreground: oklch(0.984 0.003 247.858);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --ring: oklch(0.65 0.17 256);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar: oklch(0.155 0.029 253);
   --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.65 0.17 256);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
@@ -152,3 +152,8 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* A identidade do espaço de estudo privilegia clareza, foco e acessibilidade. */
+.dark { color-scheme: dark; }
+.dark h1, .dark h2, .dark h3 { font-family: var(--font-sans); letter-spacing: -0.025em; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
