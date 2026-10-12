@@ -8,10 +8,33 @@ export const Route = createFileRoute("/_authenticated/atlas")({
   component: Atlas,
 });
 
-type System = "Esquelético" | "Muscular" | "Nervoso" | "Digestivo" | "Respiratório" | "Cardiovascular" | "Urinário";
+type System = "Esquelético" | "Muscular" | "Nervoso" | "Digestivo" | "Respiratório" | "Cardiovascular" | "Urinário" | "Reprodutor" | "Endócrino" | "Linfático" | "Tegumentar" | "Órgãos dos sentidos";
 type Structure = { name: string; system: System; x: number; y: number; description: string; dog?: string; cat?: string };
-const systems: System[] = ["Esquelético", "Muscular", "Nervoso", "Digestivo", "Respiratório", "Cardiovascular", "Urinário"];
+const systems: System[] = ["Esquelético", "Muscular", "Nervoso", "Digestivo", "Respiratório", "Cardiovascular", "Urinário", "Reprodutor", "Endócrino", "Linfático", "Tegumentar", "Órgãos dos sentidos"];
 const structures: Structure[] = [
+  { name: "Ovário", system: "Reprodutor", x: 371, y: 213, description: "Gónada feminina responsável pela produção de ovócitos e pela secreção de hormonas sexuais.", dog: "Na cadela, os ovários situam-se na região sublombar, caudais aos rins.", cat: "Na gata, os ovários são relativamente pequenos e encontram-se caudais aos rins." },
+  { name: "Útero", system: "Reprodutor", x: 390, y: 240, description: "Órgão tubular com dois cornos uterinos, corpo e colo; recebe os embriões e sustenta a gestação.", dog: "A cadela apresenta útero bicórneo com cornos longos.", cat: "A gata apresenta útero bicórneo; os cornos são relativamente longos." },
+  { name: "Testículo", system: "Reprodutor", x: 420, y: 280, description: "Gónada masculina com túbulos seminíferos; produz espermatozoides e testosterona.", dog: "No cão, o escroto situa-se entre os membros pélvicos.", cat: "No gato, o escroto situa-se caudalmente ao pénis, na região perineal." },
+  { name: "Hipófise", system: "Endócrino", x: 96, y: 122, description: "Glândula endócrina na base do encéfalo; participa na regulação do crescimento, reprodução, metabolismo e equilíbrio hídrico." },
+  { name: "Tiroide", system: "Endócrino", x: 153, y: 132, description: "Glândula endócrina cervical, junto à traqueia; produz hormonas que regulam o metabolismo.", dog: "No cão, o hipotiroidismo é uma endocrinopatia relevante.", cat: "No gato, o hipertiroidismo é uma endocrinopatia frequente em animais idosos." },
+  { name: "Glândula suprarrenal", system: "Endócrino", x: 347, y: 155, description: "Glândula endócrina próxima do polo cranial de cada rim; córtex e medula produzem hormonas distintas." },
+  { name: "Baço", system: "Linfático", x: 330, y: 212, description: "Órgão linfático abdominal relacionado com filtragem sanguínea, resposta imunitária e reserva celular." },
+  { name: "Linfonodo mandibular", system: "Linfático", x: 111, y: 146, description: "Linfonodo superficial que participa na drenagem linfática de regiões da cabeça." },
+  { name: "Linfonodo poplíteo", system: "Linfático", x: 403, y: 242, description: "Linfonodo palpável na região caudal do joelho, importante na avaliação clínica." },
+  { name: "Pele", system: "Tegumentar", x: 267, y: 104, description: "Órgão de revestimento composto por epiderme, derme e hipoderme; atua como barreira e participa na termorregulação." },
+  { name: "Glândula mamária", system: "Tegumentar", x: 310, y: 196, description: "Estrutura glandular cutânea especializada na produção de leite durante a lactação.", dog: "A cadela apresenta habitualmente cinco pares de glândulas mamárias.", cat: "A gata apresenta habitualmente quatro pares de glândulas mamárias." },
+  { name: "Unha", system: "Tegumentar", x: 126, y: 295, description: "Estrutura queratinizada associada à falange distal, importante para proteção, tração e comportamento.", dog: "No cão, as unhas não são normalmente retráteis.", cat: "No gato, a maioria das unhas dos dedos é retrátil em repouso." },
+  { name: "Olho", system: "Órgãos dos sentidos", x: 83, y: 119, description: "Órgão visual que inclui córnea, cristalino, retina e estruturas anexas; converte luz em sinais nervosos." },
+  { name: "Ouvido externo", system: "Órgãos dos sentidos", x: 77, y: 95, description: "Pavilhão auricular e canal auditivo externo, responsáveis por captar e conduzir ondas sonoras." },
+  { name: "Órgão vomeronasal", system: "Órgãos dos sentidos", x: 68, y: 130, description: "Estrutura quimiossensorial associada à perceção de determinados sinais químicos." },
+  { name: "Úmero", system: "Esquelético", x: 157, y: 212, description: "Osso longo do braço entre a articulação do ombro e a do cotovelo." },
+  { name: "Rádio", system: "Esquelético", x: 135, y: 261, description: "Osso do antebraço que participa nas articulações do cotovelo e do carpo." },
+  { name: "Tíbia", system: "Esquelético", x: 410, y: 261, description: "Osso longo da perna, principal suporte de carga entre joelho e tarso." },
+  { name: "Pâncreas", system: "Digestivo", x: 342, y: 205, description: "Glândula com função exócrina digestiva e função endócrina de regulação da glicemia." },
+  { name: "Veia cava caudal", system: "Cardiovascular", x: 329, y: 149, description: "Grande veia que conduz sangue da metade caudal do corpo para a aurícula direita." },
+  { name: "Laringe", system: "Respiratório", x: 116, y: 129, description: "Estrutura cartilagínea entre a faringe e a traqueia; protege a via aérea e participa na fonação." },
+  { name: "Uretra", system: "Urinário", x: 429, y: 262, description: "Canal de condução da urina desde a bexiga até ao exterior; apresenta diferenças anatómicas entre sexos." },
+  { name: "Cerebelo", system: "Nervoso", x: 103, y: 111, description: "Parte do encéfalo essencial para coordenação motora, equilíbrio e precisão dos movimentos." },
   { name: "Encéfalo", system: "Nervoso", x: 86, y: 116, description: "Integra informação sensorial, coordena movimentos e regula funções vitais. Inclui cérebro, cerebelo e tronco encefálico." },
   { name: "Medula espinal", system: "Nervoso", x: 257, y: 120, description: "Transmite impulsos entre o encéfalo e o corpo; integra reflexos espinais." },
   { name: "Nervo ciático", system: "Nervoso", x: 380, y: 226, description: "Nervo periférico importante na inervação do membro pélvico." },
@@ -41,6 +64,7 @@ const structures: Structure[] = [
   { name: "Bexiga urinária", system: "Urinário", x: 411, y: 253, description: "Armazena a urina antes da micção." },
 ];
 const palette: Record<System, string> = {
+  "Reprodutor": "#be185d", "Endócrino": "#0f766e", "Linfático": "#65a30d", "Tegumentar": "#b45309", "Órgãos dos sentidos": "#4f46e5",
   "Esquelético": "#a16207", "Muscular": "#ea580c", "Nervoso": "#9333ea", "Digestivo": "#15803d", "Respiratório": "#0284c7",
   "Cardiovascular": "#dc2626", "Urinário": "#7c3aed",
 };
@@ -158,7 +182,7 @@ function Atlas() {
             {showLabels && !quiz && <text x={s.x + 13} y={s.y - 12} fontSize="10" fontWeight="600" fill="#0f172a" stroke="#f8fafc" strokeWidth="3" paintOrder="stroke">{s.name}</text>}
           </g>)}
         </svg></div>
-        <p className="text-xs text-muted-foreground">Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p>
+        <p className="text-xs text-muted-foreground">Os pontos de sistemas sem camada desenhada são apenas marcadores de referência e não indicam localização anatómica exata. Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p>
       </section>
       <section className="space-y-3 rounded-2xl border bg-card p-4">
         <h2 className="font-semibold">Estruturas · {system}</h2>
@@ -169,6 +193,6 @@ function Atlas() {
         {!current && <p className="text-sm text-muted-foreground">Seleciona uma estrutura no esquema ou na lista para veres a explicação.</p>}
       </section>
     </div>
-    <p className="text-xs text-muted-foreground">Este atlas é uma primeira versão esquemática. Não substitui imagens anatómicas reais, atlas de referência ou avaliação clínica.</p>
+    <p className="text-xs text-muted-foreground">Conteúdo introdutório de anatomia comparada. A nomenclatura deve ser conferida com a Nomina Anatomica Veterinaria (WAVA); os desenhos e pontos não são imagens anatómicas validadas nem servem para diagnóstico.</p>
   </div>;
 }
