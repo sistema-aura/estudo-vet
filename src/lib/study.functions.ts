@@ -48,19 +48,21 @@ function requireText(material: Material): string {
 }
 
 const idValidator = z.object({ id: z.string().uuid() });
+// Use a minimal schema compatible with strict OpenAI Structured Outputs.
+// Validate cardinality, ranges and content on the server after generation.
 const quizSchema = z.object({
   questions: z.array(z.object({
-    question: z.string().min(12).max(600),
-    options: z.array(z.string().min(1).max(350)).length(4),
-    correctIndex: z.number().int().min(0).max(3),
-    explanation: z.string().min(8).max(1000),
-  })).min(3).max(15),
+    question: z.string(),
+    options: z.array(z.string()),
+    correctIndex: z.number(),
+    explanation: z.string(),
+  })),
 });
 const flashcardSchema = z.object({
   cards: z.array(z.object({
-    question: z.string().min(8).max(500),
-    answer: z.string().min(5).max(1200),
-  })).min(5).max(15),
+    question: z.string(),
+    answer: z.string(),
+  })),
 });
 
 export const summarizeMaterial = createServerFn({ method: "POST" })
@@ -95,7 +97,15 @@ export const generateQuiz = createServerFn({ method: "POST" })
       material.title + "». Não inventes informação fora dos excertos.\n\n<documento>\n" + source + "\n</documento>",
       quizSchema,
     );
-    return result;
+    const questions = result.questions.filter(question =>
+      question.question.trim().length >= 8 && question.question.length <= 600 &&
+      question.options.length === 4 &&
+      question.options.every(option => option.trim().length > 0 && option.length <= 350) &&
+      Number.isInteger(question.correctIndex) && question.correctIndex >= 0 && question.correctIndex <= 3 &&
+      question.explanation.trim().length >= 5 && question.explanation.length <= 1000
+    ).slice(0, data.count);
+    if (questions.length < 3) throw new Error("A IA não devolveu perguntas válidas suficientes. Tenta gerar novamente.");
+    return { questions };
   });
 
 export const generateFlashcards = createServerFn({ method: "POST" })
@@ -104,7 +114,7 @@ export const generateFlashcards = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { aiObject } = await import("./ai.server");
     const material = await getMaterial(data.id);
-    return await aiObject(
+    const result = await aiObject(
       SYSTEM,
       "Cria " + data.count + " flashcards curtos de perguntas e respostas a partir destes excertos do PDF «" +
       material.title + "». Cada cartão deve testar um único conceito importante. Não inventes factos e evita cartões repetidos. " +
@@ -112,6 +122,16 @@ export const generateFlashcards = createServerFn({ method: "POST" })
       pdfContext(requireText(material), 26000) + "\n</documento>",
       flashcardSchema,
     );
+    const seen = new Set<string>();
+    const cards = result.cards.filter(card => {
+      const question = card.question.trim(), answer = card.answer.trim();
+      const key = question.toLocaleLowerCase("pt-PT");
+      if (question.length < 8 || question.length > 500 || answer.length < 5 || answer.length > 1200 || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, data.count);
+    if (cards.length < 5) throw new Error("A IA não devolveu flashcards válidos suficientes. Tenta novamente.");
+    return { cards };
   });
 
 /** Explicit diagnostic: called only when the user clicks 'Testar ligação à IA'. */
