@@ -85,7 +85,7 @@ const anatomicalPlates = {
     { title: "Esqueleto — prancha anatómica", file: "Dog_anatomy_lateral_skeleton_view_(full).jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_lateral_skeleton_view_(full).jpg", credit: "Ellenberger e Baum / Hermann Dittrich · domínio público", system: "Esquelético" },
     { title: "Anatomia craniana", file: "Dog_anatomy_head.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_head.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Esquelético" },
     { title: "Vista anterior", file: "Dog_anatomy_anterior_view.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_anterior_view.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Muscular" },
-    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Anatomy_Atlas_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Anatomy_Atlas_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
+    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
   ],
   "Gato": [
     { title: "Esqueleto — fotografia de museu", file: "Cat_skeleton.jpg", source: "https://commons.wikimedia.org/wiki/File:Cat_skeleton.jpg", credit: "Museu de Anatomia Veterinária FMVZ USP / Wagner Souza e Silva · CC BY-SA 4.0", system: "Esquelético" },
@@ -154,6 +154,22 @@ function Atlas() {
             {imageFailed ? <div className="p-8 text-center text-sm">Não foi possível carregar esta imagem. <a className="underline" href={anatomicalPlates[species][plateIndex].source} target="_blank" rel="noopener noreferrer">Abrir original no Wikimedia Commons</a>.</div> : <img onError={() => setImageFailed(true)} src={"https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(anatomicalPlates[species][plateIndex].file)} alt={anatomicalPlates[species][plateIndex].title + " de " + species} className="mx-auto max-h-[620px] w-auto max-w-full object-contain" loading="lazy" referrerPolicy="no-referrer" />}
           </div>
           <p className="text-sm font-medium">{anatomicalPlates[species][plateIndex].title}</p>
+          <div className="space-y-2 rounded-xl border p-3">
+            <h3 className="font-semibold">Explorar estruturas nesta prancha</h3>
+            <p className="text-xs text-muted-foreground">Seleciona uma estrutura na lista para consultar a ficha. Estas opções não são pontos anatómicos validados sobre a fotografia.</p>
+            <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto">
+              {structures.filter(s => s.system === anatomicalPlates[species][plateIndex].system).map(s => <Button key={s.name} size="sm" variant={selected === s.name ? "default" : "outline"} onClick={() => { setSelected(s.name); setSystem(s.system); setDetailsTab("Resumo"); }}>{s.name}</Button>)}
+            </div>
+            {current && current.system === anatomicalPlates[species][plateIndex].system && <div className="space-y-2 rounded-lg bg-muted p-3">
+              <h4 className="font-bold">{current.name}</h4>
+              <p className="text-sm">{current.description}</p>
+              {clinical[current.name]?.location && <p className="text-sm"><strong>Localização:</strong> {clinical[current.name].location}</p>}
+              {clinical[current.name]?.function && <p className="text-sm"><strong>Função:</strong> {clinical[current.name].function}</p>}
+              {clinical[current.name]?.clinical && <p className="text-sm"><strong>Relevância clínica:</strong> {clinical[current.name].clinical}</p>}
+              {(species === "Cão" ? current.dog : current.cat) && <p className="text-sm"><strong>{species}:</strong> {species === "Cão" ? current.dog : current.cat}</p>}
+              <Button size="sm" variant="outline" onClick={() => setView("Esquema interativo")}>Abrir esquema interativo</Button>
+            </div>}
+          </div>
           <p className="text-xs text-muted-foreground">Fonte: {anatomicalPlates[species][plateIndex].credit}. <a href={anatomicalPlates[species][plateIndex].source} target="_blank" rel="noopener noreferrer" className="underline">Ver original e licença no Wikimedia Commons</a>.</p>
         </div>}
         {view === "Esquema interativo" && <>
