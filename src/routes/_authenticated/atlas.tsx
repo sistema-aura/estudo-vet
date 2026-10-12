@@ -1,8 +1,5 @@
 import { AnatomyAtlasPro } from "@/components/AnatomyAtlasPro";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/atlas")({
   head: () => ({ meta: [{ title: "Atlas de anatomia — VetEstudo" }] }),
@@ -64,11 +61,6 @@ const structures: Structure[] = [
   { name: "Ureter", system: "Urinário", x: 379, y: 204, description: "Conduz a urina dos rins até à bexiga." },
   { name: "Bexiga urinária", system: "Urinário", x: 411, y: 253, description: "Armazena a urina antes da micção." },
 ];
-const palette: Record<System, string> = {
-  "Reprodutor": "#be185d", "Endócrino": "#0f766e", "Linfático": "#65a30d", "Tegumentar": "#b45309", "Órgãos dos sentidos": "#4f46e5",
-  "Esquelético": "#a16207", "Muscular": "#ea580c", "Nervoso": "#9333ea", "Digestivo": "#15803d", "Respiratório": "#0284c7",
-  "Cardiovascular": "#dc2626", "Urinário": "#7c3aed",
-};
 const clinical: Record<string, { location: string; function: string; clinical: string }> = {
   "Coração": { location: "Mediastino médio, entre os pulmões, com eixo dirigido ventrocaudalmente.", function: "Mantém a circulação pulmonar e sistémica através das quatro câmaras e das válvulas cardíacas.", clinical: "A auscultação, a ecocardiografia e a radiografia torácica ajudam a avaliar alterações cardíacas." },
   "Rim": { location: "Região retroperitoneal dorsal do abdómen; o rim direito encontra-se geralmente mais cranial.", function: "Filtra o plasma, regula a homeostase hidroeletrolítica e participa no equilíbrio ácido-base.", clinical: "A função renal é avaliada com análises sanguíneas, urinálise e, quando indicado, ecografia." },
@@ -81,16 +73,4 @@ const clinical: Record<string, { location: string; function: string; clinical: s
   "Pâncreas": { location: "Abdómen cranial, associado ao duodeno e ao estômago.", function: "Secreta enzimas digestivas e hormonas como insulina e glucagina.", clinical: "A pancreatite pode apresentar sinais inespecíficos; a avaliação exige integração clínica e laboratorial." },
   "Medula espinal": { location: "Interior do canal vertebral, envolvida pelas meninges.", function: "Conduz vias motoras e sensitivas e integra arcos reflexos.", clinical: "A localização neuroanatómica é essencial no exame neurológico de paresia e ataxia." },
 };
-const anatomicalPlates = {
-  "Cão": [
-    { title: "Esqueleto — prancha anatómica", file: "Dog_anatomy_lateral_skeleton_view_(full).jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_lateral_skeleton_view_(full).jpg", credit: "Ellenberger e Baum / Hermann Dittrich · domínio público", system: "Esquelético" },
-    { title: "Anatomia craniana", file: "Dog_anatomy_head.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_head.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Esquelético" },
-    { title: "Vista anterior", file: "Dog_anatomy_anterior_view.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_anterior_view.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Muscular" },
-    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
-  ],
-  "Gato": [
-    { title: "Esqueleto — fotografia de museu", file: "Cat_skeleton.jpg", source: "https://commons.wikimedia.org/wiki/File:Cat_skeleton.jpg", credit: "Museu de Anatomia Veterinária FMVZ USP / Wagner Souza e Silva · CC BY-SA 4.0", system: "Esquelético" },
-    { title: "Comparação óssea cão / gato", file: "The_skeletal_structure_of_a_cat_and_a_dog,_Wellcome_L0034200.jpg", source: "https://commons.wikimedia.org/wiki/File:The_skeletal_structure_of_a_cat_and_a_dog,_Wellcome_L0034200.jpg", credit: "Wellcome Collection · CC BY 4.0", system: "Esquelético" },
-  ],
-} as const;
 function Atlas() { return <AnatomyAtlasPro systems={systems} structures={structures} clinical={clinical} />; }
