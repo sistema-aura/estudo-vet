@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Brain, Check, CircleAlert, Download, FileText, ListChecks, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Brain, Check, CircleAlert, Download, FileText, GraduationCap, ListChecks, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateQuiz, summarizeMaterial } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
@@ -27,6 +27,7 @@ function MaterialPage() {
   const quizFn = useServerFn(generateQuiz);
   const [busy, setBusy] = useState<"sum" | "quiz" | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [quizSavedToCards, setQuizSavedToCards] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [note, setNote] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
@@ -73,6 +74,7 @@ function MaterialPage() {
   async function doQuiz() {
     setBusy("quiz");
     setAnswers({});
+    setQuizSavedToCards(false);
     try {
       setQuiz(await quizFn({ data: { id, count: 8 } }));
     } catch (e: any) {
@@ -81,6 +83,29 @@ function MaterialPage() {
       setBusy(null);
     }
   }
+  function sendQuestionsToFlashcards() {
+    if (!quiz || !m) return;
+    try {
+      type StoredCard = { id: string; question: string; answer: string; due: number; interval: number; module?: string };
+      const stored: unknown = JSON.parse(window.localStorage.getItem("vetestudo-flashcards-v1") || "[]");
+      if (!Array.isArray(stored)) throw new Error("O armazenamento de flashcards não tem um formato válido.");
+      const old: StoredCard[] = stored.filter((item): item is StoredCard => !!item && typeof item === "object" && typeof item.question === "string" && typeof item.answer === "string");
+      const existing = new Set(old.map(card => card.question.trim().toLocaleLowerCase("pt-PT")));
+      const additions: StoredCard[] = [];
+      for (const question of quiz.questions) {
+        if (!question.question.trim() || question.correctIndex < 0 || question.correctIndex >= question.options.length) continue;
+        const key = question.question.trim().toLocaleLowerCase("pt-PT");
+        if (existing.has(key)) continue;
+        existing.add(key);
+        additions.push({ id: crypto.randomUUID(), question: question.question.trim(), answer: question.options[question.correctIndex] + "\\n\\n" + question.explanation, due: Date.now(), interval: 0, module: m.subject?.startsWith("Módulo ") ? m.subject : "Geral" });
+      }
+      if (!additions.length) { toast.info("Estes cartões já estão guardados, ou não existem perguntas válidas."); return; }
+      window.localStorage.setItem("vetestudo-flashcards-v1", JSON.stringify([...old, ...additions]));
+      setQuizSavedToCards(true);
+      toast.success(additions.length + " flashcards guardados no plano de estudo.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível guardar os flashcards."); }
+  }
+
   async function addNote() {
     if (!note.trim()) return;
     const payload = { material_id: id, title: noteTitle.trim() || m?.title || "Nota", content: note };
@@ -171,6 +196,8 @@ function MaterialPage() {
                 Acertaste {score} de {quiz.questions.length}
               </span>
             )}
+            {quiz && <Button variant="outline" onClick={sendQuestionsToFlashcards} disabled={quizSavedToCards}><GraduationCap className="mr-2 h-4 w-4" />{quizSavedToCards ? "Flashcards guardados" : "Guardar como flashcards"}</Button>}
+            {quizSavedToCards && <Link to="/estudo" className="text-sm font-semibold text-primary underline">Abrir os meus flashcards →</Link>}
           </div>
           {quiz?.questions.map((q, i) => {
             const chosen = answers[i];
