@@ -80,6 +80,16 @@ const clinical: Record<string, { location: string; function: string; clinical: s
   "Pâncreas": { location: "Abdómen cranial, associado ao duodeno e ao estômago.", function: "Secreta enzimas digestivas e hormonas como insulina e glucagina.", clinical: "A pancreatite pode apresentar sinais inespecíficos; a avaliação exige integração clínica e laboratorial." },
   "Medula espinal": { location: "Interior do canal vertebral, envolvida pelas meninges.", function: "Conduz vias motoras e sensitivas e integra arcos reflexos.", clinical: "A localização neuroanatómica é essencial no exame neurológico de paresia e ataxia." },
 };
+const anatomicalPlates = {
+  "Cão": [
+    { title: "Esqueleto — prancha anatómica", file: "Dog_anatomy_lateral_skeleton_view_(full).jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_lateral_skeleton_view_(full).jpg", credit: "Ellenberger e Baum / Hermann Dittrich · domínio público", system: "Esquelético" },
+    { title: "Esqueleto — diagrama numerado", file: "Skeleton_of_a_dog_diagram.svg", source: "https://commons.wikimedia.org/wiki/File:Skeleton_of_a_dog_diagram.svg", credit: "Przemek Maksim · CC BY-SA 3.0", system: "Esquelético" },
+  ],
+  "Gato": [
+    { title: "Esqueleto — fotografia de museu", file: "Cat_skeleton.jpg", source: "https://commons.wikimedia.org/wiki/File:Cat_skeleton.jpg", credit: "Museu de Anatomia Veterinária FMVZ USP / Wagner Souza e Silva · CC BY-SA 4.0", system: "Esquelético" },
+    { title: "Esqueleto — diagrama numerado", file: "Skeleton_diagram_of_a_cat.svg", source: "https://commons.wikimedia.org/wiki/File:Skeleton_diagram_of_a_cat.svg", credit: "Przemek Maksim · CC BY-SA 3.0", system: "Esquelético" },
+  ],
+} as const;
 function Atlas() {
   const [species, setSpecies] = useState<"Cão" | "Gato">("Cão");
   const [system, setSystem] = useState<System>("Esquelético");
@@ -94,6 +104,8 @@ function Atlas() {
   const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
   const [detailsTab, setDetailsTab] = useState<"Resumo" | "Função" | "Clínica">("Resumo");
   const [studyMode, setStudyMode] = useState(false);
+  const [view, setView] = useState<"Pranchas reais" | "Esquema interativo">("Pranchas reais");
+  const [plateIndex, setPlateIndex] = useState(0);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [target, setTarget] = useState(0);
   const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim()) && (!onlyFavorites || favorites.includes(s.name))), [system, search, favorites, onlyFavorites]);
@@ -114,7 +126,7 @@ function Atlas() {
   return <div className="mx-auto max-w-6xl space-y-5">
     <div><h1 className="text-3xl font-bold">Atlas interativo de anatomia</h1><p className="mt-1 text-sm text-muted-foreground">Explora estruturas anatómicas de cães e gatos. Ilustrações separadas de cão e gato, sistemas por camadas e exercícios de identificação. Representação esquemática, não à escala.</p></div>
     <div className="flex flex-wrap items-center gap-2">
-      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => { setSpecies(s); setSelected(null); }}>{s}</Button>)}
+      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => { setSpecies(s); setSelected(null); setPlateIndex(0); }}>{s}</Button>)}
       <span className="mx-2 h-6 border-l" />
       {systems.map(s => <Button key={s} size="sm" variant={system === s ? "default" : "outline"} onClick={() => changeSystem(s)}>{s}</Button>)}
     </div>
@@ -129,6 +141,19 @@ function Atlas() {
           <Button size="sm" variant={studyMode ? "default" : "outline"} onClick={() => { setStudyMode(v => !v); setQuiz(false); setSelected(null); }}>Modo de estudo</Button>
           <Button size="sm" variant={quiz ? "default" : "outline"} onClick={() => { setQuiz(v => !v); setScore({ correct: 0, total: 0 }); setTarget(0); setSelected(null); }}>{quiz ? "Terminar exercício" : "Praticar identificação"}</Button>
         </div>
+        <div className="flex flex-wrap gap-2">
+          {(["Pranchas reais", "Esquema interativo"] as const).map(v => <Button key={v} size="sm" variant={view === v ? "default" : "outline"} onClick={() => setView(v)}>{v}</Button>)}
+        </div>
+        {view === "Pranchas reais" && <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Pranchas anatómicas documentadas, com autoria e licença. Nesta fase, a coleção de imagens reais abrange o sistema esquelético. Os pontos interativos estão no separador «Esquema interativo» e não estão sobrepostos às fotografias.</p>
+          <div className="flex flex-wrap gap-2">{anatomicalPlates[species].map((plate, i) => <Button key={plate.file} size="sm" variant={plateIndex === i ? "default" : "outline"} onClick={() => setPlateIndex(i)}>{plate.title}</Button>)}</div>
+          <div className="overflow-auto rounded-xl border bg-white p-2">
+            <img src={"https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(anatomicalPlates[species][plateIndex].file)} alt={anatomicalPlates[species][plateIndex].title + " de " + species} className="mx-auto max-h-[620px] w-auto max-w-full object-contain" loading="lazy" referrerPolicy="no-referrer" />
+          </div>
+          <p className="text-sm font-medium">{anatomicalPlates[species][plateIndex].title}</p>
+          <p className="text-xs text-muted-foreground">Fonte: {anatomicalPlates[species][plateIndex].credit}. <a href={anatomicalPlates[species][plateIndex].source} target="_blank" rel="noopener noreferrer" className="underline">Ver original e licença no Wikimedia Commons</a>.</p>
+        </div>}
+        {view === "Esquema interativo" && <>
         {quiz && <div className="rounded-lg bg-muted p-3 text-sm"><strong>Encontra: {challenge.name}</strong><span className="ml-3">Acertos: {score.correct}/{score.total}</span>{quizFeedback && <p className="mt-2">{quizFeedback}</p>}</div>}
         <div className="overflow-auto rounded-xl bg-slate-50"><svg style={{ width: (zoom * 100) + "%", maxWidth: "none" }} viewBox="0 0 540 350" role="img" aria-label={`Esquema anatómico lateral de ${species.toLowerCase()} com pontos interativos`} className="w-full rounded-xl bg-slate-50">
           <defs>
@@ -198,7 +223,7 @@ function Atlas() {
             {showLabels && !quiz && !studyMode && <text x={s.x + 13} y={s.y - 12} fontSize="10" fontWeight="600" fill="#0f172a" stroke="#f8fafc" strokeWidth="3" paintOrder="stroke">{s.name}</text>}
           </g>)}
         </svg></div>
-        <p className="text-xs text-muted-foreground">Os pontos de sistemas sem camada desenhada são apenas marcadores de referência e não indicam localização anatómica exata. Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p>
+        <p className="text-xs text-muted-foreground">Os pontos de sistemas sem camada desenhada são apenas marcadores de referência e não indicam localização anatómica exata. Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p></>}
       </section>
       <section className="space-y-3 rounded-2xl border bg-card p-4">
         <h2 className="font-semibold">Estruturas · {system} <span className="text-xs font-normal text-muted-foreground">({visible.length})</span></h2>
