@@ -27,11 +27,11 @@ function Tutor() {
   });
 
   async function send() {
-    if (!question.trim()) return;
+    if (!question.trim() || busy) return;
     setBusy(true);
     try {
-      const { answer } = await ask({ data: { question, materialId: materialId || undefined } });
-      setHistory([{ q: question, a: answer }, ...history]);
+      const { answer } = await ask({ data: { question: question.trim(), materialId: materialId || undefined, history: history.slice(0, 6).reverse() } });
+      setHistory(prev => [{ q: question.trim(), a: answer }, ...prev]);
       setQuestion("");
     } catch (e: any) {
       toast.error(e.message ?? "Falha ao obter resposta");
@@ -47,7 +47,7 @@ function Tutor() {
       <div className="mt-6 space-y-3 rounded-2xl border bg-card p-5">
         <select
           value={materialId}
-          onChange={(e) => setMaterialId(e.target.value)}
+          onChange={(e) => { setMaterialId(e.target.value); setHistory([]); }}
           className="h-10 w-full rounded-md border bg-background px-3 text-sm"
         >
           <option value="">Sem material (conhecimento geral)</option>
@@ -58,10 +58,12 @@ function Tutor() {
           placeholder="ex.: Quais são os sinais vitais normais de um gato?"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          maxLength={4000}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }}
         />
-        <Button onClick={send} disabled={busy}><Send className="mr-2 h-4 w-4" />{busy ? "A pensar…" : "Perguntar"}</Button>
+        <Button onClick={() => void send()} disabled={busy || !question.trim()}><Send className="mr-2 h-4 w-4" />{busy ? "A pensar…" : "Perguntar"}</Button>
       </div>
+      <div className="mt-3 flex flex-wrap gap-2"><span className="text-xs text-muted-foreground">Enter para enviar · Shift+Enter para nova linha · O Tutor mantém o contexto das últimas 6 perguntas nesta sessão.</span>{history.length > 0 && <Button size="sm" variant="outline" onClick={() => setHistory([])}>Nova conversa</Button>}</div>
       <div className="mt-6 space-y-4">
         {history.map((h, i) => (
           <div key={i} className="rounded-2xl border bg-card p-5">
