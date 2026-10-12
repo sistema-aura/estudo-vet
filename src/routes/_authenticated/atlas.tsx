@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/_authenticated/atlas")({
   head: () => ({ meta: [{ title: "Atlas de anatomia — VetEstudo" }] }),
   component: Atlas,
+  errorComponent: ({ error }) => <div className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-red-400/40 bg-slate-950 p-8 text-white"><h1 className="text-2xl font-bold">Não foi possível abrir o Atlas</h1><p className="text-sm text-slate-300">A página encontrou um erro inesperado. Podes tentar novamente ou regressar ao painel do VetEstudo.</p><div className="flex flex-wrap gap-3"><button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold" onClick={() => window.location.reload()}>Tentar novamente</button><a href="/painel" className="rounded-lg border border-slate-500 px-4 py-2 text-sm">Voltar ao painel</a></div><details className="text-xs text-slate-400"><summary className="cursor-pointer">Detalhes técnicos</summary><pre className="mt-2 whitespace-pre-wrap">{String(error)}</pre></details></div>,
 });
 
 type System = "Esquelético" | "Muscular" | "Nervoso" | "Digestivo" | "Respiratório" | "Cardiovascular" | "Urinário" | "Reprodutor" | "Endócrino" | "Linfático" | "Tegumentar" | "Órgãos dos sentidos";
