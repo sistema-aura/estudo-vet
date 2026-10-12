@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Brain, Check, ListChecks, Sparkles, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,12 @@ function MaterialPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [note, setNote] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [splitView, setSplitView] = useState(true);
+  const draftKey = `vetestudo-pdf-note-${id}`;
+  useEffect(() => { try { setNote(localStorage.getItem(draftKey) ?? ""); } catch {} }, [draftKey]);
+  useEffect(() => { try { localStorage.setItem(draftKey, note); } catch {} }, [draftKey, note]);
 
   const { data: m } = useQuery({
     queryKey: ["material", id],
@@ -68,9 +74,12 @@ function MaterialPage() {
   }
   async function addNote() {
     if (!note.trim()) return;
-    const { error } = await supabase.from("notes").insert({ material_id: id, title: m?.title ?? "Nota", content: note });
+    const payload = { material_id: id, title: noteTitle.trim() || m?.title || "Nota", content: note };
+    const { error } = editingNote
+      ? await supabase.from("notes").update({ title: payload.title, content: payload.content }).eq("id", editingNote).eq("material_id", id)
+      : await supabase.from("notes").insert(payload);
     if (error) { toast.error(error.message); return; }
-    setNote("");
+    setNote(""); setNoteTitle(""); setEditingNote(null);
     qc.invalidateQueries({ queryKey: ["notes", id] });
   }
   async function remove() {
@@ -168,23 +177,43 @@ function MaterialPage() {
 
         <TabsContent value="notas" className="mt-4 space-y-4">
           <div className="rounded-2xl border bg-card p-4">
-            <Textarea placeholder="Escreve uma anotação sobre este material…" value={note} onChange={(e) => setNote(e.target.value)} rows={4} />
-            <Button className="mt-3" onClick={addNote}>Guardar anotação</Button>
+            <p className="mb-3 text-sm text-muted-foreground">No iPad, ativa Escrever à mão (Scribble) em Definições → Apple Pencil. Escreve diretamente na caixa com o Pencil para converter a escrita em texto.</p>
+            <input className="mb-3 w-full rounded-lg border bg-background p-3 text-base" placeholder="Título da anotação" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} />
+            <Textarea className="min-h-48 text-base" placeholder="Escreve aqui com o Apple Pencil ou teclado…" value={note} onChange={e => setNote(e.target.value)} rows={8} />
+            <div className="mt-3 flex gap-2"><Button onClick={addNote} disabled={!note.trim()}>{editingNote ? "Atualizar anotação" : "Guardar anotação"}</Button>
+            {editingNote && <Button variant="outline" onClick={() => { setEditingNote(null); setNote(""); setNoteTitle(""); }}>Cancelar</Button>}</div>
           </div>
-          {notes.map((n) => (
-            <div key={n.id} className="whitespace-pre-wrap rounded-xl border bg-card p-4 text-sm">
-              {n.content}
-              <div className="mt-2 text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("pt-PT")}</div>
-            </div>
-          ))}
+          {notes.map(n => <div key={n.id} className="rounded-xl border bg-card p-4">
+            <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{n.title}</h3><Button size="sm" variant="outline" onClick={() => { setEditingNote(n.id); setNote(n.content); setNoteTitle(n.title); }}>Editar</Button></div>
+            <p className="mt-2 whitespace-pre-wrap text-sm">{n.content}</p>
+            <div className="mt-2 text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("pt-PT")}</div>
+          </div>)}
         </TabsContent>
 
         <TabsContent value="pdf" className="mt-4">
-          {m.url ? (
-            <iframe src={m.url} title={m.title} className="h-[80vh] w-full rounded-2xl border" />
-          ) : (
-            <p className="text-muted-foreground">PDF indisponível.</p>
-          )}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">Estuda com o documento aberto e escreve notas ao lado.</p>
+            <Button variant="outline" size="sm" onClick={() => setSplitView(v => !v)}>{splitView ? "Ver PDF completo" : "PDF + anotações"}</Button>
+          </div>
+          <div className={splitView ? "grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]" : ""}>
+            <div className="min-w-0">
+              {m.url ? <iframe src={m.url} title={m.title} className="h-[75vh] w-full rounded-2xl border bg-white" /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
+            </div>
+            {splitView && <aside className="min-w-0 space-y-3 rounded-2xl border bg-card p-4">
+              <h2 className="text-lg font-bold">As minhas anotações</h2>
+              <p className="text-xs text-muted-foreground">Apple Pencil: usa Scribble no campo abaixo para transformar a escrita manual em texto. A conversão depende do idioma e das definições do iPadOS.</p>
+              <input className="w-full rounded-lg border bg-background p-3 text-base" aria-label="Título da nota" placeholder="Título da nota" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} />
+              <Textarea className="min-h-[35vh] text-base" aria-label="Escrever anotação com Apple Pencil" placeholder="Escreve aqui com o Apple Pencil…" value={note} onChange={e => setNote(e.target.value)} rows={12} />
+              <div className="flex flex-wrap gap-2"><Button onClick={addNote} disabled={!note.trim()}>{editingNote ? "Atualizar nota" : "Guardar nota"}</Button>
+              {editingNote && <Button variant="outline" onClick={() => { setEditingNote(null); setNote(""); setNoteTitle(""); }}>Cancelar edição</Button>}</div>
+              <p className="text-xs text-muted-foreground">Rascunho guardado neste navegador. Notas confirmadas ficam associadas a este PDF.</p>
+              <div className="max-h-72 space-y-2 overflow-auto">
+                {notes.map(n => <button key={n.id} className="block w-full rounded-lg border p-3 text-left hover:bg-muted" onClick={() => { setEditingNote(n.id); setNoteTitle(n.title); setNote(n.content); }}>
+                  <span className="font-semibold">{n.title}</span><span className="mt-1 block line-clamp-3 whitespace-pre-wrap text-sm">{n.content}</span>
+                </button>)}
+              </div>
+            </aside>}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
