@@ -27,6 +27,6 @@ describe("Atlas anatómico profissional", () => {
     const html = renderToStaticMarkup(<AnatomyAtlasPro systems={systems} structures={structures} clinical={{}} />);
     expect(html).toContain("Músculo responsável por elevar a mandíbula.");
     expect(html).toContain("Visão geral");
-    expect(html).toContain("Importância clínica");
+    expect(html).toContain("Clínica");
   });
 });
