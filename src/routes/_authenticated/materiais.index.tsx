@@ -26,7 +26,7 @@ async function listMaterials(): Promise<MaterialListItem[]> {
   const all: MaterialListItem[] = [];
   for (let offset = 0; offset < 10000; offset += 500) {
     const { data, error } = await supabase.from("materials")
-      .select("id,title,subject,created_at").order("created_at", { ascending: false })
+      .select("id,title,subject,created_at").order("created_at", { ascending: false }).order("id", { ascending: false })
       .range(offset, offset + 499);
     if (error) throw error;
     const batch = data ?? [];
@@ -59,7 +59,7 @@ function Materiais() {
   const [query, setQuery] = useState("");
 
   const { data: materials = [], isPending, isError, refetch } = useQuery({
-    queryKey: ["materials"], queryFn: listMaterials,
+    queryKey: ["materials", "library"], queryFn: listMaterials,
   });
   const currentModule = modules.find(m => m.id === moduleId);
   const normalQuery = normalizePdfName(query.trim());
