@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+
+function db() {
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  return createClient(process.env["SUPABASE_URL"]!, key, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    global: key.startsWith("sb_") ? { fetch: (u: any, i: any = {}) => { const h = new Headers(i.headers); h.delete("Authorization"); h.set("apikey", key); return fetch(u, { ...i, headers: h }); } } : {},
+  });
+}
 
 const SYSTEM =
   "És um tutor especializado em auxiliar de veterinária. Responde sempre em português de Portugal, de forma clara, didática e rigorosa. Baseia-te apenas no material fornecido quando ele existir.";
@@ -12,17 +20,16 @@ async function getMaterial(supabase: any, id: string) {
 }
 
 export const summarizeMaterial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { aiText } = await import("./ai.server");
-    const m = await getMaterial(context.supabase, data.id);
+    const m = await getMaterial(db(), data.id);
     if (!m.content.trim()) throw new Error("Este material não tem texto para resumir.");
     const summary = await aiText(
       SYSTEM,
       `Faz um resumo de estudo estruturado em Markdown (títulos, tópicos, termos-chave a negrito, e uma secção final "Pontos a decorar") do material "${m.title}":\n\n${m.content.slice(0, 120000)}`,
     );
-    await context.supabase.from("materials").update({ summary }).eq("id", m.id);
+    await db().from("materials").update({ summary }).eq("id", m.id);
     return { summary };
   });
 
@@ -38,13 +45,12 @@ const quizSchema = z.object({
 });
 
 export const generateQuiz = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string; count: number }) =>
     z.object({ id: z.string().uuid(), count: z.number().int().min(3).max(15) }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { aiObject } = await import("./ai.server");
-    const m = await getMaterial(context.supabase, data.id);
+    const m = await getMaterial(db(), data.id);
     if (!m.content.trim()) throw new Error("Este material não tem texto para gerar perguntas.");
     return await aiObject(
       SYSTEM,
@@ -54,15 +60,14 @@ export const generateQuiz = createServerFn({ method: "POST" })
   });
 
 export const askTutor = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { question: string; materialId?: string | undefined }) =>
     z.object({ question: z.string().min(1).max(4000), materialId: z.string().uuid().optional() }).parse(d),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { aiText } = await import("./ai.server");
     let ctx = "";
     if (data.materialId) {
-      const m = await getMaterial(context.supabase, data.materialId);
+      const m = await getMaterial(db(), data.materialId);
       ctx = `Material de referência "${m.title}":\n${m.content.slice(0, 100000)}\n\n`;
     }
     const answer = await aiText(SYSTEM, `${ctx}Pergunta do aluno: ${data.question}`);
