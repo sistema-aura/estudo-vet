@@ -68,6 +68,18 @@ const palette: Record<System, string> = {
   "Esquelético": "#a16207", "Muscular": "#ea580c", "Nervoso": "#9333ea", "Digestivo": "#15803d", "Respiratório": "#0284c7",
   "Cardiovascular": "#dc2626", "Urinário": "#7c3aed",
 };
+const clinical: Record<string, { location: string; function: string; clinical: string }> = {
+  "Coração": { location: "Mediastino médio, entre os pulmões, com eixo dirigido ventrocaudalmente.", function: "Mantém a circulação pulmonar e sistémica através das quatro câmaras e das válvulas cardíacas.", clinical: "A auscultação, a ecocardiografia e a radiografia torácica ajudam a avaliar alterações cardíacas." },
+  "Rim": { location: "Região retroperitoneal dorsal do abdómen; o rim direito encontra-se geralmente mais cranial.", function: "Filtra o plasma, regula a homeostase hidroeletrolítica e participa no equilíbrio ácido-base.", clinical: "A função renal é avaliada com análises sanguíneas, urinálise e, quando indicado, ecografia." },
+  "Fígado": { location: "Abdómen cranial, imediatamente caudal ao diafragma.", function: "Metabolismo energético, síntese proteica, produção de bílis e biotransformação de substâncias.", clinical: "Alterações hepáticas podem exigir bioquímica sérica, ecografia e exames complementares." },
+  "Traqueia": { location: "Estende-se da laringe até à bifurcação traqueal no tórax.", function: "Conduz o ar e contribui para a depuração mucociliar.", clinical: "A avaliação da via aérea é importante em tosse, dispneia e suspeita de colapso traqueal." },
+  "Pulmões": { location: "Cavidades pleurais direita e esquerda, envolvendo o mediastino.", function: "Trocas de oxigénio e dióxido de carbono na membrana alvéolo-capilar.", clinical: "A frequência e o esforço respiratórios são parâmetros essenciais na triagem." },
+  "Estômago": { location: "Abdómen cranial, predominantemente à esquerda, caudal ao fígado.", function: "Reservatório alimentar, mistura do conteúdo e início da digestão proteica.", clinical: "A dilatação-vólvulo gástrico é uma emergência particularmente importante em cães predispostos." },
+  "Baço": { location: "Abdómen esquerdo, relacionado com a grande curvatura do estômago.", function: "Filtra sangue, participa na imunidade e no processamento de células sanguíneas.", clinical: "A avaliação ecográfica pode ser relevante perante massas, anemia ou hemorragia abdominal." },
+  "Tiroide": { location: "Região cervical ventral, com lobos junto à porção cranial da traqueia.", function: "Produz tiroxina e triiodotironina, hormonas reguladoras do metabolismo.", clinical: "O hipotiroidismo é relevante no cão; o hipertiroidismo é comum no gato geriátrico." },
+  "Pâncreas": { location: "Abdómen cranial, associado ao duodeno e ao estômago.", function: "Secreta enzimas digestivas e hormonas como insulina e glucagina.", clinical: "A pancreatite pode apresentar sinais inespecíficos; a avaliação exige integração clínica e laboratorial." },
+  "Medula espinal": { location: "Interior do canal vertebral, envolvida pelas meninges.", function: "Conduz vias motoras e sensitivas e integra arcos reflexos.", clinical: "A localização neuroanatómica é essencial no exame neurológico de paresia e ataxia." },
+};
 function Atlas() {
   const [species, setSpecies] = useState<"Cão" | "Gato">("Cão");
   const [system, setSystem] = useState<System>("Esquelético");
@@ -80,6 +92,8 @@ function Atlas() {
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [notes, setNotes] = useState<Record<string, string>>(() => { try { return JSON.parse(localStorage.getItem("vetestudo-atlas-notes") || "{}"); } catch { return {}; } });
   const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
+  const [detailsTab, setDetailsTab] = useState<"Resumo" | "Função" | "Clínica">("Resumo");
+  const [studyMode, setStudyMode] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [target, setTarget] = useState(0);
   const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim()) && (!onlyFavorites || favorites.includes(s.name))), [system, search, favorites, onlyFavorites]);
@@ -88,6 +102,7 @@ function Atlas() {
   function saveNote(name: string, value: string) { setNotes(old => { const next = { ...old, [species + ":" + name]: value }; try { localStorage.setItem("vetestudo-atlas-notes", JSON.stringify(next)); } catch {} return next; }); }
   function toggleFavorite(name: string) { setFavorites(old => { const next = old.includes(name) ? old.filter(x => x !== name) : [...old, name]; try { localStorage.setItem("vetestudo-atlas-favorites", JSON.stringify(next)); } catch {} return next; }); }
   function choose(s: Structure) {
+    setDetailsTab("Resumo");
     if (quiz) {
       setScore(v => ({ correct: v.correct + Number(s.name === challenge.name), total: v.total + 1 }));
       setQuizFeedback(s.name === challenge.name ? "Correto! Muito bem." : "Ainda não. A resposta correta era: " + challenge.name);
@@ -111,6 +126,7 @@ function Atlas() {
           <span className="text-xs tabular-nums">{Math.round(zoom * 100)}%</span>
           <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.min(2, +(z + .25).toFixed(2)))} disabled={zoom === 2}>+</Button>
           <Button size="sm" variant="outline" onClick={() => setShowLabels(v => !v)}>{showLabels ? "Ocultar legendas" : "Mostrar legendas"}</Button>
+          <Button size="sm" variant={studyMode ? "default" : "outline"} onClick={() => { setStudyMode(v => !v); setQuiz(false); setSelected(null); }}>Modo de estudo</Button>
           <Button size="sm" variant={quiz ? "default" : "outline"} onClick={() => { setQuiz(v => !v); setScore({ correct: 0, total: 0 }); setTarget(0); setSelected(null); }}>{quiz ? "Terminar exercício" : "Praticar identificação"}</Button>
         </div>
         {quiz && <div className="rounded-lg bg-muted p-3 text-sm"><strong>Encontra: {challenge.name}</strong><span className="ml-3">Acertos: {score.correct}/{score.total}</span>{quizFeedback && <p className="mt-2">{quizFeedback}</p>}</div>}
@@ -179,17 +195,17 @@ function Atlas() {
           {visible.map(s => <g key={s.name} onClick={() => choose(s)} className="cursor-pointer" role="button" aria-label={s.name} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(s); } }}>
             <circle cx={s.x} cy={s.y} r={selected === s.name ? 13 : 10} fill={palette[system]} stroke="white" strokeWidth="3" opacity={selected === s.name ? 1 : 0.85}/>
             <circle cx={s.x} cy={s.y} r="17" fill="transparent"/>
-            {showLabels && !quiz && <text x={s.x + 13} y={s.y - 12} fontSize="10" fontWeight="600" fill="#0f172a" stroke="#f8fafc" strokeWidth="3" paintOrder="stroke">{s.name}</text>}
+            {showLabels && !quiz && !studyMode && <text x={s.x + 13} y={s.y - 12} fontSize="10" fontWeight="600" fill="#0f172a" stroke="#f8fafc" strokeWidth="3" paintOrder="stroke">{s.name}</text>}
           </g>)}
         </svg></div>
         <p className="text-xs text-muted-foreground">Os pontos de sistemas sem camada desenhada são apenas marcadores de referência e não indicam localização anatómica exata. Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p>
       </section>
       <section className="space-y-3 rounded-2xl border bg-card p-4">
-        <h2 className="font-semibold">Estruturas · {system}</h2>
+        <h2 className="font-semibold">Estruturas · {system} <span className="text-xs font-normal text-muted-foreground">({visible.length})</span></h2>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyFavorites} onChange={e => setOnlyFavorites(e.target.checked)} /> Apenas favoritas ({favorites.length})</label>
         <Input placeholder="Pesquisar estrutura…" value={search} onChange={e => setSearch(e.target.value)} />
         <div className="max-h-64 space-y-1 overflow-auto">{visible.map(s => <button key={s.name} onClick={() => choose(s)} className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${selected === s.name ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{s.name}</button>)}</div>
-        {current && <div className="space-y-2 rounded-xl border p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">{current.name}</h3><Button size="sm" variant="outline" onClick={() => toggleFavorite(current.name)}>{favorites.includes(current.name) ? "★ Guardada" : "☆ Guardar"}</Button></div><p className="text-sm">{current.description}</p>{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}<label className="block text-sm font-medium">As minhas notas<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-background p-3 text-sm" placeholder="Escreve aqui apontamentos sobre esta estrutura…" value={notes[species + ":" + current.name] || ""} onChange={e => saveNote(current.name, e.target.value)} /></label><p className="text-xs text-muted-foreground">Notas guardadas neste navegador.</p></div>}
+        {current && <div className="space-y-3 rounded-xl border p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">{current.name}</h3><Button size="sm" variant="outline" onClick={() => toggleFavorite(current.name)}>{favorites.includes(current.name) ? "★ Guardada" : "☆ Guardar"}</Button></div><div className="flex flex-wrap gap-2">{(["Resumo", "Função", "Clínica"] as const).map(tab => <Button key={tab} size="sm" variant={detailsTab === tab ? "default" : "outline"} onClick={() => setDetailsTab(tab)}>{tab}</Button>)}</div><p className="text-sm leading-relaxed">{detailsTab === "Resumo" ? current.description : detailsTab === "Função" ? clinical[current.name]?.function || current.description : clinical[current.name]?.clinical || "Informação clínica específica ainda em preparação; consulta bibliografia veterinária para aprofundar."}</p>{detailsTab === "Resumo" && clinical[current.name]?.location && <p className="text-sm"><strong>Localização:</strong> {clinical[current.name].location}</p>}{!clinical[current.name] && <p className="text-xs text-muted-foreground">Ficha em expansão: os detalhes ainda não foram integralmente revistos.</p> }{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}<label className="block text-sm font-medium">As minhas notas<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-background p-3 text-sm" placeholder="Escreve aqui apontamentos sobre esta estrutura…" value={notes[species + ":" + current.name] || ""} onChange={e => saveNote(current.name, e.target.value)} /></label><p className="text-xs text-muted-foreground">Notas guardadas neste navegador.</p></div>}
         {!current && <p className="text-sm text-muted-foreground">Seleciona uma estrutura no esquema ou na lista para veres a explicação.</p>}
       </section>
     </div>
