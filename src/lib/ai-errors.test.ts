@@ -17,6 +17,12 @@ describe("OpenAI API error messages", () => {
     expect(friendlyAiError({ statusCode: 403 })).toContain("permissão");
     expect(friendlyAiError({ statusCode: 404 })).toContain("modelo");
   });
+  it("classifies wrapped SDK errors even without an HTTP status", () => {
+    expect(friendlyAiError({ name: "AI_APICallError", message: "insufficient_quota" })).toContain("saldo");
+    expect(friendlyAiError({ name: "AI_APICallError", message: "invalid_api_key" })).toContain("chave");
+    expect(friendlyAiError({ name: "AI_APICallError", message: "model_not_found" })).toContain("modelo");
+    expect(friendlyAiError({ name: "AI_APICallError", message: "unsupported_parameter" })).toContain("parâmetro");
+  });
   it("never exposes raw provider messages or credentials", () => {
     const message = friendlyAiError(new Error("Bearer sk-secret-example"));
     expect(message).not.toContain("sk-secret-example");
