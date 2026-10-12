@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookA, BookOpen, Brain, NotebookPen, PawPrint, Stethoscope } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, BookA, BookOpen, Bone, Brain, ClipboardCheck, GraduationCap, NotebookPen, Sparkles } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "VetEstudo — Estuda auxiliar de veterinária com IA" },
-      { name: "description", content: "Organiza os teus PDFs, faz anotações, gera resumos e perguntas com IA e consulta o teu dicionário veterinário." },
-      { property: "og:title", content: "VetEstudo — Estuda auxiliar de veterinária com IA" },
-      { property: "og:description", content: "PDFs organizados, resumos, perguntas e dicionário — tudo num só sítio." },
+      { title: "VetEstudo — A tua plataforma de estudo veterinário" },
+      { name: "description", content: "Organiza PDFs, estuda com flashcards, explora o atlas anatómico de cão e gato e treina com exames simulados." },
+      { property: "og:title", content: "VetEstudo — A tua plataforma de estudo veterinário" },
+      { property: "og:description", content: "Materiais, flashcards, tutor IA, atlas anatómico e exames num único espaço de estudo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -17,46 +17,44 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: BookOpen, t: "Materiais organizados", d: "Carrega os PDFs do campus e organiza-os por disciplina." },
-  { icon: Brain, t: "Resumos e perguntas com IA", d: "A IA lê o PDF e cria resumos e testes de escolha múltipla." },
-  { icon: NotebookPen, t: "Anotações", d: "Escreve notas soltas ou ligadas a cada material." },
-  { icon: BookA, t: "Dicionário", d: "Guarda termos difíceis e pesquisa-os num instante." },
-  { icon: Stethoscope, t: "Ficha do paciente", d: "Em breve: pratica fichas clínicas e identificação de patologias." },
-];
+  { icon: BookOpen, title: "Materiais organizados", description: "PDFs separados pelos módulos do curso, sempre fáceis de encontrar.", to: "/materiais" },
+  { icon: GraduationCap, title: "Flashcards e plano", description: "Define objetivos, cria cartões e revê com repetição espaçada.", to: "/estudo" },
+  { icon: Bone, title: "Atlas anatómico", description: "Explora imagens e estruturas de anatomia de cão e gato.", to: "/atlas" },
+  { icon: ClipboardCheck, title: "Exames simulados", description: "Treina com perguntas de escolha múltipla e acompanha resultados.", to: "/exames" },
+  { icon: NotebookPen, title: "Caderno digital", description: "Escreve e desenha apontamentos no teu próprio caderno.", to: "/anotacoes" },
+  { icon: BookA, title: "Dicionário veterinário", description: "Pesquisa termos e constrói o teu glossário de estudo.", to: "/dicionario" },
+] as const;
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2 text-primary">
-          <PawPrint className="h-6 w-6" />
-          <span className="font-display text-xl font-bold">VetEstudo</span>
-        </div>
-        <Button asChild variant="outline"><Link to="/painel">Entrar</Link></Button>
+    <div className="min-h-screen bg-[#f5f8fd] text-[#12243b]">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-5 sm:px-8">
+        <Link to="/" className="flex items-center gap-2.5" aria-label="VetEstudo, página inicial"><BrandMark className="h-10 w-10" /><span className="text-xl font-extrabold tracking-tight">VetEstudo</span></Link>
+        <Link to="/painel" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#cad7e8] bg-white px-4 py-2 text-sm font-semibold text-[#15417a] transition hover:border-blue-400 hover:shadow-sm">Entrar <ArrowRight size={16}/></Link>
       </header>
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 md:pt-20">
-        <p className="mb-4 inline-block rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground">
-          Para estudantes de auxiliar de veterinária
-        </p>
-        <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-          O teu caderno de estudo, <span className="text-primary">com um tutor sempre ao lado.</span>
-        </h1>
-        <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Junta os PDFs do curso, tira dúvidas, gera resumos e testa-te com perguntas feitas a partir da tua própria matéria.
-        </p>
-        <div className="mt-8 flex gap-3">
-          <Button asChild size="lg"><Link to="/painel">Começar a estudar</Link></Button>
-        </div>
-      </section>
-      <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-24 sm:grid-cols-2 lg:grid-cols-3">
-        {features.map((f) => (
-          <div key={f.t} className="rounded-2xl border bg-card p-6">
-            <f.icon className="h-6 w-6 text-primary" />
-            <h3 className="mt-4 text-lg font-bold">{f.t}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{f.d}</p>
+      <main>
+        <section className="relative mx-auto max-w-7xl px-5 pb-12 pt-7 sm:px-8 sm:pt-12">
+          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-[#153f7d] via-[#0c2c54] to-[#07182c] px-6 py-14 text-white shadow-2xl shadow-blue-900/10 sm:px-12 sm:py-20">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-32 h-[400px] w-[400px] rounded-full border-[60px] border-sky-400/10"/>
+            <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-8 h-56 w-56 rounded-full bg-blue-400/10 blur-3xl"/>
+            <div className="relative max-w-3xl">
+              <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-300/30 bg-white/10 px-3 py-1.5 text-xs font-bold text-blue-100"><Sparkles size={14}/> Para estudantes de veterinária</span>
+              <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">Estuda com mais organização, foco e confiança.</h1>
+              <p className="mt-6 max-w-2xl text-base leading-relaxed text-blue-100/90 sm:text-lg">Os teus materiais, o caderno, os flashcards, o Atlas anatómico e os exames num só lugar — com um tutor IA para ajudar a esclarecer dúvidas.</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/painel" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-extrabold text-[#133d70] transition hover:bg-blue-50">Começar a estudar <ArrowRight size={17}/></Link>
+                <Link to="/atlas" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/20">Explorar o Atlas <Bone size={17}/></Link>
+              </div>
+            </div>
           </div>
-        ))}
-      </section>
+        </section>
+
+        <section className="mx-auto max-w-7xl space-y-5 px-5 pb-20 sm:px-8" aria-labelledby="ferramentas">
+          <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-blue-700">A tua plataforma</p><h2 id="ferramentas" className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Tudo o que precisas para aprender</h2></div><Link to="/painel" className="text-sm font-semibold text-blue-700 hover:underline">Abrir painel →</Link></div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{features.map(f => <Link key={f.to} to={f.to} className="group rounded-2xl border border-[#dce5f1] bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-lg"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#ebf3ff] text-[#236cda]"><f.icon size={24} strokeWidth={1.9}/></span><h3 className="mt-5 text-lg font-bold">{f.title}</h3><p className="mt-2 text-sm leading-relaxed text-[#617186]">{f.description}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-blue-700">Explorar <ArrowRight size={14} className="transition group-hover:translate-x-1"/></span></Link>)}</div>
+          <p className="text-center text-xs text-[#65768d]">Algumas ferramentas guardam o progresso apenas no dispositivo utilizado. O conteúdo educativo não substitui formação prática ou aconselhamento veterinário.</p>
+        </section>
+      </main>
     </div>
   );
 }
