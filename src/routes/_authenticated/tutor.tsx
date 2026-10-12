@@ -29,7 +29,7 @@ function Tutor() {
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<{ q: string; a: string }[]>([]);
   const { data: materials = [] } = useQuery({
-    queryKey: ["materials"],
+    queryKey: ["materials", "tutor-picker"],
     queryFn: async () => (await supabase.from("materials").select("id,title,subject").order("title")).data ?? [],
   });
 
