@@ -7,6 +7,7 @@ import { ArrowLeft, Brain, Check, ListChecks, Sparkles, Trash2, X } from "lucide
 import { supabase } from "@/integrations/supabase/client";
 import { generateQuiz, summarizeMaterial } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
+import { PdfReader } from "@/components/PdfReader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -197,7 +198,7 @@ function MaterialPage() {
           </div>
           <div className={splitView ? "grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]" : ""}>
             <div className="min-w-0">
-              {m.url ? <iframe src={m.url} title={m.title} className="h-[75vh] w-full rounded-2xl border bg-white" /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
+              {m.url ? <PdfReader url={m.url} /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
             </div>
             {splitView && <aside className="min-w-0 space-y-3 rounded-2xl border bg-card p-4">
               <h2 className="text-lg font-bold">As minhas anotações</h2>
