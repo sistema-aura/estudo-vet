@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { BookOpen, BookA, GraduationCap, Bone, ClipboardCheck, LayoutDashboard, MessageCircleQuestion, NotebookPen, PawPrint, Stethoscope } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -17,9 +17,10 @@ const nav = [
 ] as const;
 
 function Layout() {
+  const isAtlas = useLocation().pathname === "/atlas";
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0">
+      <aside className={isAtlas ? "hidden" : "bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0"}>
         <div className="flex items-center gap-2 px-5 py-5">
           <PawPrint className="h-6 w-6 text-sidebar-primary" />
           <span className="font-display text-xl font-bold">VetEstudo</span>
@@ -44,7 +45,7 @@ function Layout() {
           </div>
         </nav>
       </aside>
-      <main className="flex-1 px-5 py-8 md:px-10">
+      <main className={isAtlas ? "min-w-0 flex-1" : "flex-1 px-5 py-8 md:px-10"}>
         <Outlet />
       </main>
     </div>
