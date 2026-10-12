@@ -7,10 +7,11 @@ export function PdfReader({ url }: { url: string }) {
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [zoom, setZoom] = useState(100);
   useEffect(() => {
     let cancelled = false;
     let task: import("pdfjs-dist").PDFDocumentLoadingTask | undefined;
-    setPdf(null); setPage(1); setError(""); setLoading(true);
+    setPdf(null); setPage(1); setZoom(100); setError(""); setLoading(true);
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
@@ -33,9 +34,13 @@ export function PdfReader({ url }: { url: string }) {
         if (cancelled || !canvas.current) return;
         const base = p.getViewport({ scale: 1 });
         const width = Math.max(300, canvas.current.parentElement?.clientWidth ?? 700);
-        const viewport = p.getViewport({ scale: Math.min(2, width / base.width) });
+        const cssScale = (width / base.width) * zoom / 100;
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
+        const viewport = p.getViewport({ scale: cssScale * pixelRatio });
         const el = canvas.current;
         el.width = Math.ceil(viewport.width); el.height = Math.ceil(viewport.height);
+        el.style.width = `${Math.ceil(base.width * cssScale)}px`;
+        el.style.height = `${Math.ceil(base.height * cssScale)}px`;
         const ctx = el.getContext("2d");
         if (!ctx) return;
         render = p.render({ canvas: el, canvasContext: ctx, viewport });
@@ -45,7 +50,7 @@ export function PdfReader({ url }: { url: string }) {
       }
     })();
     return () => { cancelled = true; render?.cancel(); };
-  }, [pdf, page]);
+  }, [pdf, page, zoom]);
   return <div className="min-w-0 rounded-2xl border bg-card p-3">
     {loading && <p className="p-5 text-sm">A abrir todas as páginas do PDF…</p>}
     {error && <p role="alert" className="p-4 text-sm text-destructive">{error} <a className="underline" href={url} target="_blank" rel="noreferrer">Abrir ficheiro original</a></p>}
@@ -53,7 +58,8 @@ export function PdfReader({ url }: { url: string }) {
       <div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</Button>
       <span className="text-sm">Página {page} de {pdf.numPages}</span>
       <Button variant="outline" size="sm" disabled={page >= pdf.numPages} onClick={() => setPage(p => Math.min(pdf.numPages, p + 1))}>Seguinte</Button></div>
+      <div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={zoom <= 75} onClick={() => setZoom(z => Math.max(75, z - 25))} aria-label="Reduzir zoom">−</Button><span className="min-w-12 text-center text-sm">{zoom}%</span><Button variant="outline" size="sm" disabled={zoom >= 200} onClick={() => setZoom(z => Math.min(200, z + 25))} aria-label="Aumentar zoom">+</Button></div>
       <a href={url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Abrir PDF original</a>
-    </div><div className="max-h-[76vh] overflow-auto rounded-lg bg-slate-100"><canvas ref={canvas} className="mx-auto h-auto max-w-full bg-white shadow" /></div></>}
+    </div><div className="max-h-[76vh] overflow-auto rounded-lg bg-slate-100"><canvas ref={canvas} className="mx-auto max-w-none bg-white shadow" /></div></>}
   </div>;
 }
