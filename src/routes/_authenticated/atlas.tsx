@@ -85,7 +85,7 @@ const anatomicalPlates = {
     { title: "Esqueleto — prancha anatómica", file: "Dog_anatomy_lateral_skeleton_view_(full).jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_lateral_skeleton_view_(full).jpg", credit: "Ellenberger e Baum / Hermann Dittrich · domínio público", system: "Esquelético" },
     { title: "Anatomia craniana", file: "Dog_anatomy_head.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_head.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Esquelético" },
     { title: "Vista anterior", file: "Dog_anatomy_anterior_view.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_anterior_view.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Muscular" },
-    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
+    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Anatomy_Atlas_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Anatomy_Atlas_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
   ],
   "Gato": [
     { title: "Esqueleto — fotografia de museu", file: "Cat_skeleton.jpg", source: "https://commons.wikimedia.org/wiki/File:Cat_skeleton.jpg", credit: "Museu de Anatomia Veterinária FMVZ USP / Wagner Souza e Silva · CC BY-SA 4.0", system: "Esquelético" },
