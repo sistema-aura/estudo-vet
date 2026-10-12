@@ -7,7 +7,7 @@ import { ArrowLeft, Brain, Check, CircleAlert, Download, FileText, GraduationCap
 import { supabase } from "@/integrations/supabase/client";
 import catalog from "@/data/curso-catalogo.json";
 import { catalogueModuleForName, moduleSubject } from "@/lib/materials";
-import { generateQuiz, summarizeMaterial } from "@/lib/study.functions";
+import { generateQuiz, summarizeMaterial, generateFlashcards } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
 import { PdfReader } from "@/components/PdfReader";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,11 @@ function MaterialPage() {
   const navigate = useNavigate();
   const summarize = useServerFn(summarizeMaterial);
   const quizFn = useServerFn(generateQuiz);
-  const [busy, setBusy] = useState<"sum" | "quiz" | null>(null);
+  const cardsFn = useServerFn(generateFlashcards);
+  const [busy, setBusy] = useState<"sum" | "quiz" | "cards" | null>(null);
+  const [aiError, setAiError] = useState("");
+  const [generatedCards, setGeneratedCards] = useState<{ question: string; answer: string }[]>([]);
+  const [cardsSaved, setCardsSaved] = useState(false);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [quizSavedToCards, setQuizSavedToCards] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -62,28 +66,84 @@ function MaterialPage() {
     queryFn: async () => (await supabase.from("notes").select("*").eq("material_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
+  function reportAiFailure(error: unknown) {
+    const message = error instanceof Error ? error.message : "A IA não conseguiu concluir o pedido. Tenta novamente.";
+    setAiError(message);
+    toast.error(message);
+  }
   async function doSummary() {
+    if (busy) return;
+    setAiError("");
     setBusy("sum");
     try {
-      await summarize({ data: { id } });
-      qc.invalidateQueries({ queryKey: ["material", id] });
-    } catch (e: any) {
-      toast.error(e.message ?? "Falha ao gerar resumo");
+      const result = await summarize({ data: { id } });
+      qc.setQueryData(["material", id], (current: typeof m) => current ? { ...current, summary: result.summary } : current);
+      await qc.invalidateQueries({ queryKey: ["material", id] });
+      toast.success("Resumo gerado e guardado.");
+    } catch (error) {
+      reportAiFailure(error);
     } finally {
       setBusy(null);
     }
   }
   async function doQuiz() {
+    if (busy) return;
+    setAiError("");
     setBusy("quiz");
     setAnswers({});
     setQuizSavedToCards(false);
     try {
-      setQuiz(await quizFn({ data: { id, count: 8 } }));
-    } catch (e: any) {
-      toast.error(e.message ?? "Falha ao gerar perguntas");
+      const result = await quizFn({ data: { id, count: 8 } });
+      if (!result.questions.length) throw new Error("A IA não devolveu perguntas válidas. Tenta novamente.");
+      setQuiz(result);
+      toast.success(result.questions.length + " perguntas preparadas.");
+    } catch (error) {
+      reportAiFailure(error);
     } finally {
       setBusy(null);
     }
+  }
+  async function doFlashcards() {
+    if (busy) return;
+    setAiError("");
+    setBusy("cards");
+    setCardsSaved(false);
+    try {
+      const result = await cardsFn({ data: { id, count: 10 } });
+      if (!result.cards.length) throw new Error("A IA não devolveu flashcards válidos. Tenta novamente.");
+      setGeneratedCards(result.cards);
+      toast.success(result.cards.length + " flashcards preparados para rever.");
+    } catch (error) {
+      reportAiFailure(error);
+    } finally {
+      setBusy(null);
+    }
+  }
+  function saveGeneratedCards() {
+    if (!m || !generatedCards.length) return;
+    try {
+      type StoredCard = { id: string; question: string; answer: string; due: number; interval: number; module?: string };
+      const data: unknown = JSON.parse(window.localStorage.getItem("vetestudo-flashcards-v1") || "[]");
+      if (!Array.isArray(data)) throw new Error("O armazenamento de flashcards não tem um formato válido.");
+      const old = data.filter((item): item is StoredCard =>
+        !!item && typeof item === "object" && typeof item.question === "string" && typeof item.answer === "string");
+      const known = new Set(old.map(card => card.question.trim().toLocaleLowerCase("pt-PT")));
+      const moduleId = catalogueModuleForName(m.title, catalog.modules);
+      const assignedModule = moduleId === null ? (m.subject?.startsWith("Módulo ") ? m.subject : "Geral") : moduleSubject(moduleId);
+      const additions: StoredCard[] = [];
+      for (const card of generatedCards) {
+        const question = card.question.trim(), answer = card.answer.trim();
+        if (!question || !answer) continue;
+        const key = question.toLocaleLowerCase("pt-PT");
+        if (known.has(key)) continue;
+        known.add(key);
+        additions.push({ id: crypto.randomUUID(), question, answer, due: Date.now(), interval: 0, module: assignedModule });
+      }
+      if (!additions.length) { toast.info("Estes cartões já existem na tua coleção."); return; }
+      window.localStorage.setItem("vetestudo-flashcards-v1", JSON.stringify([...old, ...additions]));
+      setCardsSaved(true);
+      toast.success(additions.length + " cartões guardados em " + assignedModule + ".");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível guardar estes cartões."); }
   }
   function sendQuestionsToFlashcards() {
     if (!quiz || !m) return;
@@ -167,8 +227,10 @@ function MaterialPage() {
           <TabsTrigger value="notas">Notas ({notes.length})</TabsTrigger>
           <TabsTrigger value="resumo">Resumo IA</TabsTrigger>
           <TabsTrigger value="quiz">Perguntas IA</TabsTrigger>
+          <TabsTrigger value="cards">Flashcards IA</TabsTrigger>
         </TabsList>
 
+        {aiError && <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><CircleAlert className="mt-0.5 h-4 w-4 shrink-0"/><span>{aiError}</span></div>}
         <TabsContent value="resumo" className="mt-4 rounded-2xl border bg-card p-6">
           {m.summary ? (
             <>
@@ -230,6 +292,20 @@ function MaterialPage() {
               </div>
             );
           })}
+        </TabsContent>
+
+        <TabsContent value="cards" className="mt-4 space-y-4">
+          <section className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border bg-card p-5">
+            <div className="max-w-lg"><h2 className="flex items-center gap-2 text-lg font-bold"><GraduationCap className="h-5 w-5 text-primary"/> Gerar flashcards a partir do PDF</h2>
+              <p className="mt-2 text-sm text-muted-foreground">A IA cria 10 cartões de pergunta e resposta com base no texto do documento. Revê sempre os conteúdos antes de guardá-los.</p></div>
+            <Button disabled={busy !== null || !m.content?.trim()} onClick={() => void doFlashcards()}><Sparkles className="mr-2 h-4 w-4"/>{busy === "cards" ? "A gerar cartões…" : generatedCards.length ? "Gerar novamente" : "Gerar 10 flashcards"}</Button>
+          </section>
+          {generatedCards.length > 0 && <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">{generatedCards.length} cartões prontos para revisão</p>
+              <Button disabled={cardsSaved} onClick={saveGeneratedCards}><GraduationCap className="mr-2 h-4 w-4"/>{cardsSaved ? "Guardados no plano" : "Guardar no plano de estudo"}</Button></div>
+            {generatedCards.map((card, index) => <article key={index} className="rounded-xl border bg-card p-4"><p className="text-sm font-bold">{index+1}. {card.question}</p><p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{card.answer}</p></article>)}
+            {cardsSaved && <Link to="/estudo" className="inline-flex text-sm font-semibold text-primary underline">Abrir flashcards no plano de estudo →</Link>}
+          </div>}
         </TabsContent>
 
         <TabsContent value="notas" className="mt-4 space-y-4">
