@@ -54,20 +54,24 @@ function Atlas() {
   const [zoom, setZoom] = useState(1);
   const [favorites, setFavorites] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("vetestudo-atlas-favorites") || "[]"); } catch { return []; } });
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [notes, setNotes] = useState<Record<string, string>>(() => { try { return JSON.parse(localStorage.getItem("vetestudo-atlas-notes") || "{}"); } catch { return {}; } });
+  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [target, setTarget] = useState(0);
   const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim()) && (!onlyFavorites || favorites.includes(s.name))), [system, search, favorites, onlyFavorites]);
   const current = visible.find(s => s.name === selected);
   const challenge = structures.filter(s => s.system === system)[target % structures.filter(s => s.system === system).length];
+  function saveNote(name: string, value: string) { setNotes(old => { const next = { ...old, [species + ":" + name]: value }; try { localStorage.setItem("vetestudo-atlas-notes", JSON.stringify(next)); } catch {} return next; }); }
   function toggleFavorite(name: string) { setFavorites(old => { const next = old.includes(name) ? old.filter(x => x !== name) : [...old, name]; try { localStorage.setItem("vetestudo-atlas-favorites", JSON.stringify(next)); } catch {} return next; }); }
   function choose(s: Structure) {
     if (quiz) {
       setScore(v => ({ correct: v.correct + Number(s.name === challenge.name), total: v.total + 1 }));
+      setQuizFeedback(s.name === challenge.name ? "Correto! Muito bem." : "Ainda não. A resposta correta era: " + challenge.name);
       setSelected(s.name);
-      if (s.name === challenge.name) setTarget(v => v + 1);
+      setTarget(v => v + 1);
     } else setSelected(s.name);
   }
-  function changeSystem(s: System) { setSystem(s); setSelected(null); setTarget(0); setScore({ correct: 0, total: 0 }); }
+  function changeSystem(s: System) { setSystem(s); setSelected(null); setTarget(0); setQuizFeedback(null); setScore({ correct: 0, total: 0 }); }
   return <div className="mx-auto max-w-6xl space-y-5">
     <div><h1 className="text-3xl font-bold">Atlas interativo de anatomia</h1><p className="mt-1 text-sm text-muted-foreground">Explora estruturas anatómicas de cães e gatos. Ilustrações separadas de cão e gato, sistemas por camadas e exercícios de identificação. Representação esquemática, não à escala.</p></div>
     <div className="flex flex-wrap items-center gap-2">
@@ -85,7 +89,7 @@ function Atlas() {
           <Button size="sm" variant="outline" onClick={() => setShowLabels(v => !v)}>{showLabels ? "Ocultar legendas" : "Mostrar legendas"}</Button>
           <Button size="sm" variant={quiz ? "default" : "outline"} onClick={() => { setQuiz(v => !v); setScore({ correct: 0, total: 0 }); setTarget(0); setSelected(null); }}>{quiz ? "Terminar exercício" : "Praticar identificação"}</Button>
         </div>
-        {quiz && <div className="rounded-lg bg-muted p-3 text-sm"><strong>Encontra: {challenge.name}</strong><span className="ml-3">Acertos: {score.correct}/{score.total}</span></div>}
+        {quiz && <div className="rounded-lg bg-muted p-3 text-sm"><strong>Encontra: {challenge.name}</strong><span className="ml-3">Acertos: {score.correct}/{score.total}</span>{quizFeedback && <p className="mt-2">{quizFeedback}</p>}</div>}
         <div className="overflow-auto rounded-xl bg-slate-50"><svg style={{ width: (zoom * 100) + "%", maxWidth: "none" }} viewBox="0 0 540 350" role="img" aria-label={`Esquema anatómico lateral de ${species.toLowerCase()} com pontos interativos`} className="w-full rounded-xl bg-slate-50">
           <defs>
             <linearGradient id="coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={species === "Cão" ? "#e6b87e" : "#c5d1d9"}/><stop offset="1" stopColor={species === "Cão" ? "#b78353" : "#8d9fae"}/></linearGradient>
@@ -161,7 +165,7 @@ function Atlas() {
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyFavorites} onChange={e => setOnlyFavorites(e.target.checked)} /> Apenas favoritas ({favorites.length})</label>
         <Input placeholder="Pesquisar estrutura…" value={search} onChange={e => setSearch(e.target.value)} />
         <div className="max-h-64 space-y-1 overflow-auto">{visible.map(s => <button key={s.name} onClick={() => choose(s)} className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${selected === s.name ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{s.name}</button>)}</div>
-        {current && <div className="space-y-2 rounded-xl border p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">{current.name}</h3><Button size="sm" variant="outline" onClick={() => toggleFavorite(current.name)}>{favorites.includes(current.name) ? "★ Guardada" : "☆ Guardar"}</Button></div><p className="text-sm">{current.description}</p>{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}</div>}
+        {current && <div className="space-y-2 rounded-xl border p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">{current.name}</h3><Button size="sm" variant="outline" onClick={() => toggleFavorite(current.name)}>{favorites.includes(current.name) ? "★ Guardada" : "☆ Guardar"}</Button></div><p className="text-sm">{current.description}</p>{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}<label className="block text-sm font-medium">As minhas notas<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-background p-3 text-sm" placeholder="Escreve aqui apontamentos sobre esta estrutura…" value={notes[species + ":" + current.name] || ""} onChange={e => saveNote(current.name, e.target.value)} /></label><p className="text-xs text-muted-foreground">Notas guardadas neste navegador.</p></div>}
         {!current && <p className="text-sm text-muted-foreground">Seleciona uma estrutura no esquema ou na lista para veres a explicação.</p>}
       </section>
     </div>
