@@ -92,6 +92,66 @@ const richProfiles: Record<string, Rich> = {
     { label: "Vascularização", value: "Ramos das artérias celíaca e mesentérica cranial, conforme o segmento intestinal." },
     { label: "Relevância clínica", value: "Corpos estranhos, enterites, obstruções e enteropatias crónicas podem afetar esta região." },
   ] },
+  "Fígado": { subtitle: "Hepar · órgão metabólico e glandular", sections: [
+    { label: "Localização", value: "Abdómen cranial, caudal ao diafragma, com diferentes lobos que envolvem a região gástrica." },
+    { label: "Vascularização", value: "Recebe sangue pela veia porta e artéria hepática; drena por veias hepáticas para a veia cava caudal." },
+    { label: "Função", value: "Metabolismo de nutrientes, síntese de proteínas plasmáticas, armazenamento energético, produção e secreção de bílis." },
+    { label: "Relevância clínica", value: "Alterações de enzimas hepáticas e avaliação ecográfica devem ser interpretadas em contexto clínico." },
+  ] },
+  "Estômago": { subtitle: "Gaster · segmento dilatado do tubo digestivo", sections: [
+    { label: "Localização", value: "Abdómen cranial, com maior parte à esquerda, entre esófago e duodeno." },
+    { label: "Anatomia", value: "Cárdia, fundo, corpo e região pilórica, com curvaturas maior e menor e pregas da mucosa." },
+    { label: "Função", value: "Armazena, mistura e acidifica o conteúdo alimentar, iniciando sobretudo a digestão proteica." },
+    { label: "Relevância clínica", value: "Vómito e obstrução são apresentações relevantes; dilatação-vólvulo gástrico é emergência no cão." },
+  ] },
+  "Traqueia": { subtitle: "Trachea · via aérea condutora", sections: [
+    { label: "Localização", value: "Estende-se desde a cartilagem cricóide da laringe até à carina, onde se divide nos brônquios principais." },
+    { label: "Anatomia", value: "Anéis cartilagíneos incompletos dorsalmente, unidos pelo músculo traqueal e tecido conjuntivo." },
+    { label: "Função", value: "Condução de ar e depuração mucociliar de partículas inaladas." },
+    { label: "Relevância clínica", value: "Estenose, colapso traqueal e doenças inflamatórias podem causar tosse e dificuldade respiratória." },
+  ] },
+  "Útero": { subtitle: "Uterus · órgão reprodutor feminino", sections: [
+    { label: "Localização", value: "No abdómen e na cavidade pélvica, entre a região sublombar e a bexiga, conforme o estado reprodutivo." },
+    { label: "Anatomia", value: "Útero bicórneo com dois cornos relativamente longos, corpo curto e colo uterino." },
+    { label: "Vascularização", value: "Irrigação por ramos uterinos associados à artéria vaginal e à artéria ovárica." },
+    { label: "Função", value: "Receção dos embriões, placentação, manutenção da gestação e contrações no parto." },
+    { label: "Relevância clínica", value: "A piómetra é uma emergência frequente em fêmeas inteiras; não se deve confundir útero normal com patologia." },
+  ] },
+  "Crânio": { subtitle: "Cranium · ossos do neurocrânio e viscerocrânio", sections: [
+    { label: "Anatomia", value: "Inclui ossos que protegem o encéfalo e constituem as cavidades nasais, orbitárias e a face." },
+    { label: "Função", value: "Proteção do encéfalo e dos órgãos dos sentidos; sustentação de dentes e inserção da musculatura mastigatória." },
+    { label: "Relevância clínica", value: "Trauma craniano, doença dentária e conformações braquicefálicas exigem avaliação anatómica específica." },
+  ] },
+  "Coluna vertebral": { subtitle: "Columna vertebralis · esqueleto axial", sections: [
+    { label: "Anatomia", value: "Nos cães e gatos, tipicamente 7 vértebras cervicais, 13 torácicas, 7 lombares e 3 sacrais fusionadas; número de caudais variável." },
+    { label: "Função", value: "Protege a medula espinal, suporta o tronco e permite movimentos controlados." },
+    { label: "Relevância clínica", value: "A localização segmentar das lesões e a interpretação radiográfica são essenciais em neurologia e ortopedia." },
+  ] },
+  "Tiroide": { subtitle: "Glandula thyroidea · sistema endócrino", sections: [
+    { label: "Localização", value: "Dois lobos, geralmente situados junto à traqueia cervical cranial, nas proximidades da laringe." },
+    { label: "Vascularização", value: "Irrigação tiroideia, incluindo ramos provenientes de artérias regionais cervicais." },
+    { label: "Função", value: "Produção de T4 e T3, hormonas envolvidas no metabolismo e termogénese." },
+    { label: "Relevância clínica", value: "Hipotiroidismo adquirido é particularmente relevante no cão; hipertiroidismo é comum no gato geriátrico." },
+  ] },
+  "Cerebelo": { subtitle: "Cerebellum · divisão do encéfalo", sections: [
+    { label: "Localização", value: "Porção caudal da cavidade craniana, dorsal ao tronco encefálico." },
+    { label: "Função", value: "Coordenação motora, precisão e aprendizagem dos movimentos, equilíbrio e ajuste do tónus." },
+    { label: "Relevância clínica", value: "Disfunção cerebelosa pode causar ataxia, hipermetria e tremor de intenção." },
+  ] },
+  "Músculo trapézio": { subtitle: "Musculus trapezius · região cervical e torácica dorsal", sections: [
+    { label: "Origem", value: "Rafe mediana dorsal e ligamento supraespinhoso nas regiões cervical e torácica." },
+    { label: "Inserção", value: "Espinha da escápula." },
+    { label: "Inervação", value: "Nervo acessório (XI), com contribuições cervicais." },
+    { label: "Função", value: "Elevação e rotação da escápula, participando na movimentação do membro torácico." },
+    { label: "Relevância clínica", value: "Importante para a identificação de planos musculares em dissecação e na avaliação de atrofia regional." },
+  ] },
+  "Músculo gastrocnémio": { subtitle: "Musculus gastrocnemius · região caudal da perna", sections: [
+    { label: "Origem", value: "Cabeças medial e lateral na região supracondilar do fémur." },
+    { label: "Inserção", value: "Tuber calcanei através do tendão calcâneo comum." },
+    { label: "Inervação", value: "Nervo tibial, ramo do nervo ciático." },
+    { label: "Função", value: "Extensão do tarso e contribuição para a flexão do joelho." },
+    { label: "Relevância clínica", value: "Lesões do mecanismo calcâneo comum comprometem o apoio e a extensão do tarso." },
+  ] },
 };
 const tabs = ["Visão geral", "Anatomia", "Função", "Clínica"] as const;
 function imageUrl(file: string, width = 1200) {
