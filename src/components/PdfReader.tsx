@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
-import { ArrowDownToLine, Bookmark, Check, ChevronLeft, ChevronRight, Download, Eraser, FileImage, Highlighter, Maximize2, PenLine, Redo2, RotateCcw, Search, Undo2, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowDownToLine, Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Download, Eraser, FileImage, Highlighter, Maximize2, PenLine, Redo2, RotateCcw, Search, Undo2, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 
 type Stroke = { points: [number, number][]; color: string; width: number; opacity?: number };
 type Ink = Record<string, Stroke[]>;
@@ -35,6 +36,7 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
   const activeStroke = useRef<Stroke | null>(null);
   const redoRef = useRef<Record<string, Stroke[]>>({});
   const textCache = useRef<Map<number, string>>(new Map());
+  const importRef = useRef<HTMLInputElement>(null);
   const searchToken = useRef(0);
 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
@@ -56,12 +58,20 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
   const [searching, setSearching] = useState(false);
   const [searchProgress, setSearchProgress] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
+  const [bookmarks, setBookmarks] = useState<number[]>([]);
 
   const inkKey = "vetestudo-pdf-ink-" + (materialId ?? url.split("?")[0]);
   const progressKey = "vetestudo-pdf-progress-" + (materialId ?? url.split("?")[0]);
+  const bookmarksKey = "vetestudo-pdf-bookmarks-" + (materialId ?? url.split("?")[0]);
   const currentInk = ink[String(page)] ?? [];
   const currentRedo = redo[String(page)] ?? [];
 
+  useEffect(() => {
+    try {
+      const parsed: unknown = JSON.parse(window.localStorage.getItem(bookmarksKey) || "[]");
+      setBookmarks(Array.isArray(parsed) ? [...new Set(parsed.filter((item): item is number => typeof item === "number" && Number.isInteger(item) && item > 0))].sort((a, b) => a - b) : []);
+    } catch { setBookmarks([]); }
+  }, [bookmarksKey]);
   useEffect(() => {
     const saved = safelyReadInk(inkKey);
     inkRef.current = saved;
@@ -86,6 +96,12 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
     try { window.localStorage.setItem(inkKey, JSON.stringify(next)); }
     catch { toast.error("Sem espaço para guardar as anotações neste dispositivo. Exporta uma cópia de segurança."); }
   }
+  function toggleBookmark() {
+    const next = (bookmarks.includes(page) ? bookmarks.filter(p => p !== page) : [...bookmarks, page]).sort((a, b) => a - b);
+    setBookmarks(next);
+    try { window.localStorage.setItem(bookmarksKey, JSON.stringify(next)); }
+    catch { toast.error("Não foi possível guardar esta página nos favoritos."); }
+  }
   function resetRedo(): void {
     redoRef.current = { ...redoRef.current, [String(page)]: [] };
     setRedo(redoRef.current);
@@ -96,7 +112,7 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
     if (activeStroke.current) finishStroke();
     setPage(next);
     setPageDraft(String(next));
-    viewer.current?.scrollTo({ top: 0, behavior: "instant" });
+    viewer.current?.scrollTo({ top: 0, behavior: "auto" });
     try { window.localStorage.setItem(progressKey, String(next)); } catch { /* Optional storage */ }
   }
   function finishStroke() {
@@ -183,6 +199,35 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
     document.body.appendChild(link); link.click(); link.remove();
     URL.revokeObjectURL(blobUrl);
     toast.success("Cópia das marcações preparada.");
+  }
+  async function importAnnotations(file: File | undefined) {
+    if (!file) return;
+    try {
+      if (file.size > 8 * 1024 * 1024) throw new Error("O ficheiro de marcações excede o limite de 8 MB.");
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== "object" || !("pages" in parsed) || !parsed.pages || typeof parsed.pages !== "object" || Array.isArray(parsed.pages)) throw new Error("Formato de marcações inválido.");
+      if ("materialId" in parsed && parsed.materialId && parsed.materialId !== materialId) throw new Error("As marcações pertencem a outro documento.");
+      const imported = parsed.pages as Record<string, unknown>;
+      const next = { ...inkRef.current };
+      let count = 0;
+      for (const [key, value] of Object.entries(imported)) {
+        if (!/^\\d+$/.test(key) || Number(key) < 1 || !Array.isArray(value)) throw new Error("Número de página inválido na cópia de segurança.");
+        const strokes: Stroke[] = [];
+        for (const item of value) {
+          if (!item || typeof item !== "object") throw new Error("Traço inválido no ficheiro.");
+          const stroke = item as Stroke;
+          if (typeof stroke.color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(stroke.color) || typeof stroke.width !== "number" || !(stroke.width > 0 && stroke.width <= 60) || !Array.isArray(stroke.points) || stroke.points.length > 30000 || !stroke.points.length || stroke.points.some(point => !Array.isArray(point) || point.length !== 2 || point.some(n => typeof n !== "number" || !Number.isFinite(n) || n < 0 || n > 1000))) throw new Error("O ficheiro contém traços inválidos.");
+          strokes.push({ color: stroke.color, width: stroke.width, points: stroke.points, opacity: typeof stroke.opacity === "number" ? Math.max(0, Math.min(1, stroke.opacity)) : 1 });
+          if (++count > 10000) throw new Error("Demasiadas marcações no ficheiro.");
+        }
+        next[key] = [...(next[key] ?? []), ...strokes];
+      }
+      if (!window.confirm("Adicionar " + count + " marcações às já existentes? Recomenda-se exportar uma cópia antes de importar.")) return;
+      storeInk(next);
+      redoRef.current = {}; setRedo({});
+      toast.success(count + " marcações importadas.");
+    } catch (caught) { toast.error(caught instanceof Error ? caught.message : "Falha ao importar as marcações."); }
+    finally { if (importRef.current) importRef.current.value = ""; }
   }
   function exportPageImage() {
     const source = canvas.current;
@@ -338,6 +383,9 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
       </div>
     </div>
 
+    {pdf && <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>Progresso de leitura: {Math.round(page / pdf.numPages * 100)}%</span><Button size="sm" variant="ghost" onClick={toggleBookmark}>{bookmarks.includes(page) ? <BookmarkCheck className="mr-1.5 h-4 w-4 text-primary"/> : <Bookmark className="mr-1.5 h-4 w-4"/>}{bookmarks.includes(page) ? "Página guardada" : "Guardar página"}</Button></div>}
+    {pdf && <Progress value={page / pdf.numPages * 100} className="h-1.5" />}
+    {bookmarks.length > 0 && pdf && <div className="flex flex-wrap items-center gap-1.5 text-xs"><span className="mr-1 font-medium text-muted-foreground">Páginas marcadas:</span>{bookmarks.filter(p => p <= pdf.numPages).map(p => <Button key={p} size="sm" variant={p === page ? "default" : "outline"} onClick={() => nextPage(p)}>{p}</Button>)}</div>}
     {showSearch && <div className="space-y-2 rounded-xl border bg-muted/25 p-3">
       <form className="flex flex-wrap gap-2" onSubmit={event => { event.preventDefault(); void findInDocument(); }}>
         <Input aria-label="Pesquisar dentro do PDF" className="min-w-40 flex-1" placeholder="Encontrar palavras dentro do PDF…" value={searchQuery} onChange={event => setSearchQuery(event.target.value)} />
@@ -386,6 +434,8 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" disabled={!pdf} onClick={exportPageImage}><FileImage className="mr-1.5 h-4 w-4"/>Página PNG</Button>
         <Button size="sm" variant="outline" disabled={!Object.values(ink).some(v => v.length)} onClick={exportAnnotations}><Download className="mr-1.5 h-4 w-4"/>Exportar marcações</Button>
+        <input ref={importRef} className="sr-only" type="file" accept=".json,application/json" aria-label="Importar marcações do PDF" onChange={event => void importAnnotations(event.target.files?.[0])}/>
+        <Button size="sm" variant="outline" onClick={() => importRef.current?.click()}><Upload className="mr-1.5 h-4 w-4"/>Importar</Button>
         <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-primary transition hover:bg-muted"><ArrowDownToLine size={16}/> PDF original</a>
       </div>
     </div>
