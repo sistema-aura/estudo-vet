@@ -39,11 +39,15 @@ function Exames() {
   const [duration, setDuration] = useState(15);
   const [session, setSession] = useState<{ questions: Question[]; started: number; answers: Record<number, number> } | null>(null);
   const [finished, setFinished] = useState<Result | null>(null);
-  const [results, setResults] = useState<Result[]>(readResults);
+  const [results, setResults] = useState<Result[]>([]);
+  const [resultsLoaded, setResultsLoaded] = useState(false);
+  const [reviewMistakes, setReviewMistakes] = useState(false);
   const [now, setNow] = useState(Date.now());
   useEffect(() => { if (!session) return; const id = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(id); }, [session]);
-  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(results)); } catch {} }, [results]);
-  const pool = useMemo(() => BANK.filter(q => area === "Todas" || q.area === area), [area]);
+  useEffect(() => { setResults(readResults()); setResultsLoaded(true); }, []);
+  useEffect(() => { if (!resultsLoaded) return; try { localStorage.setItem(KEY, JSON.stringify(results)); } catch {} }, [results, resultsLoaded]);
+  const mistakes = useMemo(() => new Set(results.flatMap(r => r.wrong)), [results]);
+  const pool = useMemo(() => BANK.filter(q => (area === "Todas" || q.area === area) && (!reviewMistakes || mistakes.has(q.id))), [area, reviewMistakes, mistakes]);
   const elapsed = session ? Math.max(0, Math.floor((now - session.started) / 1000)) : 0;
   const remaining = Math.max(0, duration * 60 - elapsed);
   function finish(current: NonNullable<typeof session>) {
@@ -73,8 +77,10 @@ function Exames() {
         <label className="space-y-1 text-sm">Perguntas<select value={count} onChange={e => setCount(Number(e.target.value))} className="block w-full rounded-md border bg-background p-2">{[5,10,15].map(n => <option key={n} value={n}>{n}</option>)}</select></label>
         <label className="space-y-1 text-sm">Tempo<select value={duration} onChange={e => setDuration(Number(e.target.value))} className="block w-full rounded-md border bg-background p-2">{[5,10,15,30].map(n => <option key={n} value={n}>{n} minutos</option>)}</select></label>
       </div>
-      <p className="text-xs text-muted-foreground">Estão disponíveis {pool.length} perguntas nesta área. O exame utilizará até {Math.min(count, pool.length)} perguntas, sem repetições na mesma tentativa.</p>
-      <Button onClick={() => { const shuffled = [...pool].sort(() => Math.random() - 0.5); setSession({ questions: shuffled.slice(0, count), started: Date.now(), answers: {} }); setNow(Date.now()); }}>Iniciar exame</Button>
+      {resultsLoaded && mistakes.size > 0 && <label className="flex items-center gap-2 rounded-xl border bg-muted/30 p-3 text-sm"><input type="checkbox" checked={reviewMistakes} onChange={e => setReviewMistakes(e.target.checked)} /> Treinar apenas perguntas erradas anteriormente ({mistakes.size} disponíveis)</label>}
+      <p className="text-xs text-muted-foreground">Estão disponíveis {pool.length} perguntas nesta seleção. O exame utilizará até {Math.min(count, pool.length)} perguntas, sem repetições na mesma tentativa.</p>
+      {reviewMistakes && pool.length === 0 && <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Não tens perguntas erradas nesta área. Escolhe outra área ou desativa a revisão de erros.</p>}
+      <Button disabled={pool.length === 0 || !resultsLoaded} onClick={() => { const shuffled = [...pool]; for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; } setSession({ questions: shuffled.slice(0, count), started: Date.now(), answers: {} }); setNow(Date.now()); }}>Iniciar exame</Button>
     </section>}
     {session && <section className="space-y-5">
       <div className="sticky top-0 z-10 flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm"><span className="font-semibold">Respondidas: {Object.keys(session.answers).length}/{current.length}</span><span className={remaining < 60 ? "font-bold text-destructive" : "font-bold"}>Tempo: {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}</span></div>
