@@ -60,16 +60,24 @@ export const generateQuiz = createServerFn({ method: "POST" })
   });
 
 export const askTutor = createServerFn({ method: "POST" })
-  .inputValidator((d: { question: string; materialId?: string | undefined }) =>
-    z.object({ question: z.string().min(1).max(4000), materialId: z.string().uuid().optional() }).parse(d),
+  .inputValidator((d: { question: string; materialId?: string; history?: { q: string; a: string }[] }) =>
+    z.object({
+      question: z.string().trim().min(1).max(4000),
+      materialId: z.string().uuid().optional(),
+      history: z.array(z.object({ q: z.string().max(4000), a: z.string().max(8000) })).max(6).optional(),
+    }).parse(d),
   )
   .handler(async ({ data }) => {
     const { aiText } = await import("./ai.server");
     let ctx = "";
     if (data.materialId) {
       const m = await getMaterial(db(), data.materialId);
-      ctx = `Material de referência "${m.title}":\n${m.content.slice(0, 100000)}\n\n`;
+      if (!m.content?.trim()) throw new Error("Este material ainda não tem texto extraído. Importa o PDF com texto para o Tutor o poder consultar.");
+      ctx = `Material de referência "${m.title}" (excerto disponível):\n${m.content.slice(0, 100000)}\n\nResponde com base apenas neste material. Se a resposta não estiver no excerto, indica-o claramente. Não inventes referências nem páginas.\n\n`;
     }
-    const answer = await aiText(SYSTEM, `${ctx}Pergunta do aluno: ${data.question}`);
+    const previous = (data.history ?? []).map(h => `Aluno: ${h.q}\nTutor: ${h.a}`).join("\n\n");
+    const prompt = `${ctx}${previous ? `Contexto da conversa anterior:\n${previous}\n\n` : ""}Pergunta atual do aluno: ${data.question}\n\nResponde em português de Portugal, com explicações claras, exemplos veterinários úteis e sem inventar factos. Se for uma situação clínica urgente, recomenda avaliação por médico veterinário.`;
+    const answer = await aiText(SYSTEM, prompt);
+    if (!answer?.trim()) throw new Error("A IA não devolveu uma resposta. Tenta novamente.");
     return { answer };
   });
