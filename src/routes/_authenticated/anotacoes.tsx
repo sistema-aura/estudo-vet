@@ -107,7 +107,7 @@ function PageThumbnail({ page, number, selected, onClick }: {
           {Array.from({ length: 32 }, (_, i) => <line key={"h"+i} x1="50" x2="950" y1={76 + i * 43} y2={76 + i * 43} stroke="#e6eaf1" strokeWidth="3"/>)}
           {Array.from({ length: 22 }, (_, i) => <line key={"v"+i} y1="45" y2="1370" x1={50 + i * 43} x2={50 + i * 43} stroke="#e6eaf1" strokeWidth="3"/>)}
         </>}
-        {page.strokes.slice(-350).map((s, i) => s.points.length === 1 && s.points[0]
+        {page.strokes.slice(-180).map((s, i) => s.points.length === 1 && s.points[0]
           ? <circle key={i} cx={s.points[0].x} cy={s.points[0].y} r={s.width/2} fill={s.color} opacity={s.tool === "highlighter" ? 0.34 : 1}/>
           : <path key={i} d={strokePath(s)} fill="none" stroke={s.color} strokeWidth={s.width} opacity={s.tool === "highlighter" ? 0.34 : 1} strokeLinecap="round" strokeLinejoin="round"/>)}
       </svg>
@@ -122,13 +122,20 @@ function PageThumbnail({ page, number, selected, onClick }: {
 }
 
 function loadLibrary(): { library: NotebookLibrary; migrated: boolean } {
+  let stored: string | null = null;
   try {
-    const v2 = window.localStorage.getItem(NOTEBOOK_STORAGE_KEY);
-    if (v2) return { library: parseLibrary(JSON.parse(v2)), migrated: false };
-  } catch (error) {
-    // Do not silently overwrite malformed v2: it may be the only surviving copy.
-    throw new Error("Não foi possível ler a biblioteca guardada. Os dados existentes não serão substituídos. " +
-      (error instanceof Error ? error.message : ""));
+    stored = window.localStorage.getItem(NOTEBOOK_STORAGE_KEY);
+  } catch {
+    // Private browsing may prohibit storage: keep the editor usable and allow JSON export.
+    return { library: initialLibrary(), migrated: false };
+  }
+  if (stored) {
+    try { return { library: parseLibrary(JSON.parse(stored)), migrated: false }; }
+    catch (error) {
+      // Never replace an unreadable v2 document: it may be the user's only copy.
+      throw new Error("Não foi possível ler a biblioteca guardada. Os dados existentes não serão substituídos. " +
+        (error instanceof Error ? error.message : ""));
+    }
   }
   try {
     const raw = window.localStorage.getItem(LEGACY_PAGES_KEY);
