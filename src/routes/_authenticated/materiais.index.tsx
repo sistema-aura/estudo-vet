@@ -21,7 +21,7 @@ function Materiais() {
   const [moduleId, setModuleId] = useState<number | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [q, setQ] = useState("");
-  const { data: materials = [] } = useQuery({
+  const { data: materials = [], isPending: loadingMaterials, isError: materialsError } = useQuery({
     queryKey: ["materials"],
     queryFn: async (): Promise<Material[]> => {
       const { data, error } = await supabase.from("materials").select("id,title,subject,created_at").order("created_at", { ascending: false });
@@ -31,8 +31,9 @@ function Materiais() {
   });
   const active = catalog.modules.find(m => m.id === moduleId);
   const matched = useMemo(() => new Set(materials.map(m => normalize(m.title))), [materials]);
-  const filter = q.trim().toLowerCase();
-  const docs = active?.documents.filter(d => (d.filename + " " + d.theme + " " + d.unit).toLowerCase().includes(filter)) ?? [];
+  const filter = normalize(q.trim());
+  const visibleModules = catalog.modules.filter(m => !filter || normalize(m.name).includes(filter) || m.documents.some(d => normalize(d.filename + " " + d.theme + " " + d.unit).includes(filter)));
+  const docs = active?.documents.filter(d => normalize(d.filename + " " + d.theme + " " + d.unit).includes(filter)) ?? [];
   async function upload(files: FileList | null) {
     if (!files?.length) return;
     for (const file of Array.from(files)) {
@@ -75,14 +76,27 @@ function Materiais() {
       <Button disabled={progress !== null} onClick={() => fileRef.current?.click()}><Upload className="mr-2 h-4 w-4" /> Carregar PDF</Button>
     </div>
     {progress !== null && <Progress value={progress} />}
-    {!active ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
-      {catalog.modules.map(m => <button key={m.id} onClick={() => { setModuleId(m.id); setQ(""); }} className="group flex flex-col items-center gap-3 rounded-2xl border bg-card px-4 py-8 text-center transition hover:border-primary hover:shadow-md">
-        <Folder className="h-14 w-14 fill-primary/15 text-primary transition group-hover:scale-105" strokeWidth={1.4} />
-        <span className="font-display text-lg font-bold">{m.name}</span>
-        <span className="text-xs text-muted-foreground">{m.documents.length} PDFs previstos · {m.documents.filter(d => matched.has(normalize(d.filename))).length} carregados</span>
-      </button>)}
-    </div> : <>
-      <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Pesquisar temas ou documentos…" value={q} onChange={e => setQ(e.target.value)} /></div>
+    {loadingMaterials && <p role="status" className="text-sm text-muted-foreground">A carregar a biblioteca…</p>}
+    {materialsError && <p role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">Não foi possível consultar os materiais carregados. Tenta atualizar a página.</p>}
+    <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" aria-label="Pesquisar na biblioteca" placeholder={active ? "Pesquisar temas ou documentos neste módulo…" : "Pesquisar módulos, temas ou PDFs…"} value={q} onChange={e => setQ(e.target.value)} /></div>
+    {!active ? <>
+      {visibleModules.length === 0 && <p className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">Nenhum módulo ou documento corresponde à pesquisa.</p>}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+        {visibleModules.map(m => {
+          const loadedCount = m.documents.filter(d => matched.has(normalize(d.filename))).length;
+          const percent = m.documents.length ? Math.round(loadedCount / m.documents.length * 100) : 0;
+          return <button key={m.id} onClick={() => { setModuleId(m.id); setQ(""); }} className="group flex flex-col items-center gap-3 rounded-2xl border bg-card px-4 py-7 text-center transition hover:border-primary hover:shadow-md">
+            <Folder className="h-12 w-12 fill-primary/15 text-primary transition group-hover:scale-105" strokeWidth={1.4} />
+            <span className="text-base font-bold">{m.name}</span>
+            <span className="text-xs text-muted-foreground">{m.documents.length} PDFs previstos · {loadingMaterials ? "…" : loadedCount} carregados</span>
+            <span className="w-full space-y-1">
+              <span className="flex justify-between text-[11px] text-muted-foreground"><span>Progresso</span><span>{loadingMaterials ? "—" : percent + "%"}</span></span>
+              <span className="block h-1.5 w-full overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary transition-all" style={{ width: (loadingMaterials ? 0 : percent) + "%" }}/></span>
+            </span>
+          </button>;
+        })}
+      </div>
+    </> : <>
       {docs.length === 0 && <p className="text-sm text-muted-foreground">Nenhum documento corresponde à pesquisa.</p>}
       {[...new Set(docs.map(d => d.theme))].map(theme => <section key={theme} className="rounded-2xl border bg-card p-4 sm:p-5">
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold"><FolderOpen className="h-5 w-5 text-primary" /> {theme}</h2>
