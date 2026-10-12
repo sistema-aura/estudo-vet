@@ -198,7 +198,7 @@ function MaterialPage() {
           </div>
           <div className={splitView ? "grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]" : ""}>
             <div className="min-w-0">
-              {m.url ? <PdfReader url={m.url} /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
+              {m.url ? <PdfReader url={m.url} materialId={id} /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
             </div>
             {splitView && <aside className="min-w-0 space-y-3 rounded-2xl border bg-card p-4">
               <h2 className="text-lg font-bold">As minhas anotações</h2>
