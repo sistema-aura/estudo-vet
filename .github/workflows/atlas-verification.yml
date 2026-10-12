@@ -25,6 +25,9 @@ on:
       - 'src/components/PdfReader.test.tsx'
       - 'src/routes/_authenticated/materiais.index.tsx'
       - 'src/routes/_authenticated/materiais.$id.tsx'
+      - 'src/routes/_authenticated/anotacoes.tsx'
+      - 'src/lib/notebook.ts'
+      - 'src/lib/notebook.test.ts'
       - '.github/workflows/atlas-verification.yml'
   workflow_dispatch:
 
@@ -40,6 +43,6 @@ jobs:
       - name: Install project dependencies
         run: npm install --no-audit --no-fund
       - name: Run component smoke tests
-        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx src/components/PdfReader.test.tsx src/lib/materials.test.ts
+        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx src/components/PdfReader.test.tsx src/lib/materials.test.ts src/lib/notebook.test.ts
       - name: Type-check the application
         run: npx tsc --noEmit
