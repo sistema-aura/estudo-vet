@@ -211,7 +211,7 @@ export function PdfReader({ url, materialId }: { url: string; materialId?: strin
       const next = { ...inkRef.current };
       let count = 0;
       for (const [key, value] of Object.entries(imported)) {
-        if (!/^\\d+$/.test(key) || Number(key) < 1 || !Array.isArray(value)) throw new Error("Número de página inválido na cópia de segurança.");
+        if (!/^\d+$/.test(key) || Number(key) < 1 || !Array.isArray(value)) throw new Error("Número de página inválido na cópia de segurança.");
         const strokes: Stroke[] = [];
         for (const item of value) {
           if (!item || typeof item !== "object") throw new Error("Traço inválido no ficheiro.");
