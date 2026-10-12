@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import type { z } from "zod";
 import { friendlyAiError } from "./ai-errors";
+import { guardAiRequest } from "./ai-guard.server";
 
 /**
  * Calls the official OpenAI API directly. This module is imported only from
@@ -46,6 +47,7 @@ function budget(value: number | undefined, defaultValue: number, hardLimit: numb
 }
 
 export async function aiText(system: string, prompt: string, options: GenerationOptions = {}): Promise<string> {
+  guardAiRequest();
   try {
     const { key, model } = readSettings();
     const result = await generateText({
@@ -72,6 +74,7 @@ export async function aiObject<T>(
   schema: z.ZodType<T>,
   options: GenerationOptions = {},
 ): Promise<T> {
+  guardAiRequest();
   try {
     const { key, model } = readSettings();
     const result = await generateText({
