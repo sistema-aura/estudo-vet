@@ -68,14 +68,13 @@ function Anotacoes() {
   function down(e: React.PointerEvent<HTMLCanvasElement>) {
     if (tool === "hand" || (stylusOnly && e.pointerType !== "pen")) return;
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     active.current = { points: [point(e)], color, width: tool === "highlighter" ? width * 5 : tool === "eraser" ? width * 6 : width, tool };
   }
   function move(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!active.current) return;
     e.preventDefault();
-    const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent];
-    for (const event of events) active.current.points.push(point(event as unknown as React.PointerEvent<HTMLCanvasElement>));
+    active.current.points.push(point(e));
     const ctx = canvas.current?.getContext("2d");
     if (ctx) draw(ctx, current, active.current);
   }
@@ -122,7 +121,7 @@ function Anotacoes() {
     </div>
     <div className="overflow-auto rounded-2xl border bg-slate-100 p-3 sm:p-6">
       <div style={{ width: `${zoom}%`, maxWidth: "none", margin: "0 auto" }}>
-        <canvas ref={canvas} width={W} height={H} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} style={{ touchAction: tool === "hand" ? "pan-x pan-y" : "none", width: "100%", height: "auto", display: "block", background: "white", boxShadow: "0 4px 20px #0002" }} aria-label="Folha de anotações" />
+        <canvas ref={canvas} width={W} height={H} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up} style={{ WebkitUserSelect: "none", userSelect: "none", touchAction: tool === "hand" ? "pan-x pan-y" : "none", width: "100%", height: "auto", display: "block", background: "white", boxShadow: "0 4px 20px #0002" }} aria-label="Folha de anotações" />
       </div>
     </div>
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3">
