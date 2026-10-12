@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { BookOpen, CircleHelp, ExternalLink, EyeOff, Heart, Layers, Maximize2, Menu, NotebookPen, PawPrint, RotateCcw, Search, Stethoscope, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type Structure = { name: string; system: string; description: string; dog?: string; cat?: string };
