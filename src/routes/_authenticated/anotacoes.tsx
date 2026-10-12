@@ -108,8 +108,8 @@ function PageThumbnail({ page, number, selected, onClick }: {
           {Array.from({ length: 22 }, (_, i) => <line key={"v"+i} y1="45" y2="1370" x1={50 + i * 43} x2={50 + i * 43} stroke="#e6eaf1" strokeWidth="3"/>)}
         </>}
         {page.strokes.slice(-350).map((s, i) => s.points.length === 1 && s.points[0]
-          ? <circle key={i} cx={s.points[0].x} cy={s.points[0].y} r={s.width/2} fill={s.color} opacity={s.tool==="highlighter"?.34:1}/>
-          : <path key={i} d={strokePath(s)} fill="none" stroke={s.color} strokeWidth={s.width} opacity={s.tool==="highlighter"?.34:1} strokeLinecap="round" strokeLinejoin="round"/>)}
+          ? <circle key={i} cx={s.points[0].x} cy={s.points[0].y} r={s.width/2} fill={s.color} opacity={s.tool === "highlighter" ? 0.34 : 1}/>
+          : <path key={i} d={strokePath(s)} fill="none" stroke={s.color} strokeWidth={s.width} opacity={s.tool === "highlighter" ? 0.34 : 1} strokeLinecap="round" strokeLinejoin="round"/>)}
       </svg>
     </div>
     <span className="min-w-0 flex-1">
@@ -155,12 +155,11 @@ function Anotacoes() {
   const [library, setLibrary] = useState<NotebookLibrary | null>(null);
   const [startupError, setStartupError] = useState("");
   const [saveError, setSaveError] = useState("");
-  const [saveCount, setSaveCount] = useState(0);
   const [historyTick, setHistoryTick] = useState(0);
   const [tool, setTool] = useState<DrawingTool>("pen");
   const [color, setColor] = useState(COLORS[0]!.hex);
   const [width, setWidth] = useState(4);
-  const [stylusOnly, setStylusOnly] = useState(true);
+  const [stylusOnly, setStylusOnly] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [showPages, setShowPages] = useState(true);
   const [showNotes, setShowNotes] = useState(true);
@@ -183,7 +182,6 @@ function Anotacoes() {
     try {
       window.localStorage.setItem(NOTEBOOK_STORAGE_KEY, JSON.stringify(library));
       setSaveError("");
-      setSaveCount(count => count + 1);
     } catch {
       setSaveError("Sem espaço para guardar neste dispositivo. Exporta uma cópia de segurança antes de sair.");
     }
@@ -577,7 +575,7 @@ function Anotacoes() {
               onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={finishStroke}
               onPointerCancel={finishStroke} onLostPointerCapture={finishStroke}
               className="block w-full bg-white shadow-xl"
-              style={{ touchAction: tool === "hand" || stylusOnly ? "pan-x pan-y" : "none", userSelect: "none", WebkitUserSelect: "none" }}/>
+              style={{ touchAction: tool === "hand" ? "pan-x pan-y" : "none", userSelect: "none", WebkitUserSelect: "none" }}/>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3">
@@ -622,7 +620,7 @@ function Anotacoes() {
       </aside>}
     </div>
     <p className="text-xs leading-relaxed text-muted-foreground">
-      <strong>Dica para iPad:</strong> com «Só Pencil» ativo, a escrita usa a caneta enquanto os dedos podem deslocar a folha. A borracha elimina traços inteiros e permite desfazer.
+      <strong>Dica para iPad:</strong> ativa «Só Pencil» para ignorar toques acidentais na escrita. Escolhe «Mover folha» para deslocar o papel com os dedos; a borracha elimina traços inteiros e permite desfazer.
       Os cadernos antigos são importados sem apagar o armazenamento original. O ficheiro JSON inclui desenhos e notas de texto.
     </p>
   </div>;
