@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { toast } from "sonner";
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, Check, ChevronLeft,
-  ChevronRight, Copy, Download, Eraser, FileImage, FilePlus2, FolderPlus, Grid3X3,
-  Hand, Highlighter, Keyboard, LayoutList, Menu, Minus, MoreHorizontal, NotebookPen,
-  Palette, PenLine, Plus, Redo2, RotateCcw, Save, Search, ShieldCheck,
+  ArrowDown, ArrowUp, BookOpen, Check, ChevronLeft,
+  ChevronRight, Copy, Download, Eraser, FileImage, FilePlus2, FolderPlus,
+  Hand, Highlighter, Keyboard, LayoutList, NotebookPen,
+  PenLine, Plus, Redo2, RotateCcw, Save, Search, ShieldCheck,
   Trash2, Undo2, Upload, X, ZoomIn, ZoomOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -546,7 +546,7 @@ function Anotacoes() {
         <Button size="sm" variant="outline" title="Apagar desenhos desta página" aria-label="Limpar desenhos" disabled={!page.strokes.length} onClick={clearPage}><RotateCcw size={17}/></Button>
       </div>
     </div>
-    <div className="grid items-start gap-4 xl:grid-cols-[215px_minmax(0,1fr)_285px]">
+    <div className={"grid items-start gap-4 " + (showPages && showNotes ? "xl:grid-cols-[215px_minmax(0,1fr)_285px]" : showPages ? "xl:grid-cols-[215px_minmax(0,1fr)]" : showNotes ? "xl:grid-cols-[minmax(0,1fr)_285px]" : "xl:grid-cols-1")}>
       {showPages && <aside className="space-y-3 rounded-2xl border bg-card p-3 xl:sticky xl:top-24" aria-label="Páginas do caderno">
         <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold">Páginas ({notebook.pages.length})</h2><Button size="sm" variant="outline" onClick={() => addPage()}><FilePlus2 size={16}/></Button></div>
         <div className="relative"><Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground"/><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Procurar página..." aria-label="Pesquisar páginas" className="h-9 pl-8 text-xs"/></div>
