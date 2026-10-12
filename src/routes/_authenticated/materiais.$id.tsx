@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Brain, Check, ListChecks, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Brain, Check, CircleAlert, Download, FileText, ListChecks, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateQuiz, summarizeMaterial } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
@@ -32,21 +32,29 @@ function MaterialPage() {
   const [noteTitle, setNoteTitle] = useState("");
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [splitView, setSplitView] = useState(true);
+  const [draftLoaded, setDraftLoaded] = useState<string | null>(null);
   const draftKey = `vetestudo-pdf-note-${id}`;
-  useEffect(() => { try { setNote(localStorage.getItem(draftKey) ?? ""); } catch {} }, [draftKey]);
-  useEffect(() => { try { localStorage.setItem(draftKey, note); } catch {} }, [draftKey, note]);
+  useEffect(() => {
+    try { setNote(localStorage.getItem(draftKey) ?? ""); } catch { setNote(""); }
+    setDraftLoaded(draftKey);
+    setNoteTitle(""); setEditingNote(null);
+  }, [draftKey]);
+  useEffect(() => { if (draftLoaded !== draftKey) return; try { localStorage.setItem(draftKey, note); } catch { toast.error("Não foi possível guardar o rascunho neste dispositivo."); } }, [draftKey, draftLoaded, note]);
 
-  const { data: m } = useQuery({
+  const { data: m, isPending: materialLoading, isError: materialError, refetch: refetchMaterial } = useQuery({
     queryKey: ["material", id],
     queryFn: async () => {
       const { data, error } = await supabase.from("materials").select("*").eq("id", id).single();
       if (error) throw error;
       let url: string | null = null;
-      if (data.file_path) url = (await supabase.storage.from("materials").createSignedUrl(data.file_path, 3600)).data?.signedUrl ?? null;
+      if (data.file_path) {
+        const signed = await supabase.storage.from("materials").createSignedUrl(data.file_path, 3600);
+        url = signed.data?.signedUrl ?? null;
+      }
       return { ...data, url };
     },
   });
-  const { data: notes = [] } = useQuery({
+  const { data: notes = [], isError: notesError } = useQuery({
     queryKey: ["notes", id],
     queryFn: async () => (await supabase.from("notes").select("*").eq("material_id", id).order("created_at", { ascending: false })).data ?? [],
   });
@@ -81,17 +89,34 @@ function MaterialPage() {
       : await supabase.from("notes").insert(payload);
     if (error) { toast.error(error.message); return; }
     setNote(""); setNoteTitle(""); setEditingNote(null);
-    qc.invalidateQueries({ queryKey: ["notes", id] });
+    toast.success(editingNote ? "Anotação atualizada." : "Anotação guardada.");
+    await qc.invalidateQueries({ queryKey: ["notes", id] });
+  }
+  async function deleteNote(noteId: string) {
+    if (!window.confirm("Apagar esta anotação? Esta ação não pode ser desfeita.")) return;
+    const { error } = await supabase.from("notes").delete().eq("id", noteId).eq("material_id", id);
+    if (error) { toast.error(error.message); return; }
+    if (editingNote === noteId) { setEditingNote(null); setNote(""); setNoteTitle(""); }
+    toast.success("Anotação apagada.");
+    await qc.invalidateQueries({ queryKey: ["notes", id] });
   }
   async function remove() {
-    if (!m || !confirm("Apagar este material?")) return;
-    if (m.file_path) await supabase.storage.from("materials").remove([m.file_path]);
-    await supabase.from("materials").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["materials"] });
-    navigate({ to: "/materiais" });
+    if (!m || !window.confirm("Apagar este material da biblioteca? As notas associadas poderão também ser afetadas.")) return;
+    // Delete the database record first: never orphan a live database record by deleting its PDF prematurely.
+    const { error: deleteError } = await supabase.from("materials").delete().eq("id", id);
+    if (deleteError) { toast.error("Não foi possível apagar: " + deleteError.message); return; }
+    if (m.file_path) {
+      const { error: storageError } = await supabase.storage.from("materials").remove([m.file_path]);
+      if (storageError) toast.warning("Registo apagado, mas não foi possível remover o ficheiro armazenado.");
+    }
+    await qc.invalidateQueries({ queryKey: ["materials"] });
+    await qc.invalidateQueries({ queryKey: ["counts"] });
+    toast.success("Material removido da biblioteca.");
+    void navigate({ to: "/materiais" });
   }
 
-  if (!m) return <p className="text-muted-foreground">A carregar…</p>;
+  if (materialLoading) return <div className="mx-auto max-w-6xl space-y-3"><div className="h-6 w-36 animate-pulse rounded-lg bg-muted"/><div className="h-11 w-2/3 animate-pulse rounded-lg bg-muted"/><p role="status" className="text-sm text-muted-foreground">A abrir material…</p></div>;
+  if (materialError || !m) return <div role="alert" className="mx-auto max-w-2xl space-y-4 rounded-2xl border bg-card p-6"><h1 className="flex items-center gap-2 font-bold"><CircleAlert className="h-5 w-5 text-destructive"/> Não foi possível carregar o material</h1><p className="text-sm text-muted-foreground">Verifica a ligação ou tenta abrir novamente o documento.</p><div className="flex flex-wrap gap-2"><Button onClick={() => void refetchMaterial()}><RefreshCw className="mr-2 h-4 w-4"/> Tentar novamente</Button><Button asChild variant="outline"><Link to="/materiais">Voltar à biblioteca</Link></Button></div></div>;
   const score = quiz ? quiz.questions.filter((q, i) => answers[i] === q.correctIndex).length : 0;
 
   return (
@@ -99,27 +124,29 @@ function MaterialPage() {
       <Link to="/materiais" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Materiais
       </Link>
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{m.title}</h1>
-          <p className="text-sm text-muted-foreground">{m.subject}</p>
+      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-primary">Documento de estudo</p>
+          <h1 className="mt-1 break-words text-2xl font-extrabold tracking-tight sm:text-3xl">{m.title}</h1>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-primary/10 px-3 py-1.5 font-semibold text-primary">{m.subject}</span><span className="rounded-full bg-muted px-3 py-1.5 text-muted-foreground">{notes.length} anotação{notes.length === 1 ? "" : "ões"}</span><span className="rounded-full bg-muted px-3 py-1.5 text-muted-foreground">{m.content?.trim() ? "Texto disponível para IA" : "Sem texto extraído"}</span></div>
         </div>
-        <Button variant="ghost" size="icon" onClick={remove} aria-label="Apagar"><Trash2 className="h-4 w-4" /></Button>
+        <div className="flex flex-wrap gap-2">{m.url && <Button asChild variant="outline" size="sm"><a href={m.url} target="_blank" rel="noopener noreferrer"><Download className="mr-2 h-4 w-4"/> Abrir original</a></Button>}<Button variant="outline" size="sm" onClick={() => void refetchMaterial()}><RefreshCw className="mr-2 h-4 w-4"/> Atualizar</Button><Button variant="outline" size="sm" onClick={remove} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Apagar</Button></div>
       </div>
+      {!m.content?.trim() && <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs leading-relaxed text-foreground"><CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"/> Este PDF não tem texto extraído. Podes lê-lo e fazer anotações, mas resumos e perguntas por IA necessitam de texto pesquisável. Documentos digitalizados podem exigir OCR.</div>}
 
-      <Tabs defaultValue="resumo" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="quiz">Perguntas</TabsTrigger>
-          <TabsTrigger value="notas">Anotações ({notes.length})</TabsTrigger>
-          <TabsTrigger value="pdf">PDF</TabsTrigger>
+      <Tabs defaultValue="pdf" className="mt-6">
+        <TabsList className="h-auto flex-wrap justify-start gap-1">
+          <TabsTrigger value="pdf"><FileText className="mr-1.5 h-4 w-4"/> Leitor PDF</TabsTrigger>
+          <TabsTrigger value="notas">Notas ({notes.length})</TabsTrigger>
+          <TabsTrigger value="resumo">Resumo IA</TabsTrigger>
+          <TabsTrigger value="quiz">Perguntas IA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumo" className="mt-4 rounded-2xl border bg-card p-6">
           {m.summary ? (
             <>
               <Markdown>{m.summary}</Markdown>
-              <Button variant="outline" className="mt-6" onClick={doSummary} disabled={busy !== null}>
+              <Button variant="outline" className="mt-6" onClick={doSummary} disabled={busy !== null || !m.content?.trim()}>
                 <Sparkles className="mr-2 h-4 w-4" /> {busy === "sum" ? "A gerar…" : "Gerar de novo"}
               </Button>
             </>
@@ -127,7 +154,7 @@ function MaterialPage() {
             <div className="py-10 text-center">
               <Brain className="mx-auto h-10 w-10 text-primary" />
               <p className="mt-3 text-muted-foreground">A IA lê o PDF e cria um resumo de estudo para ti.</p>
-              <Button className="mt-4" onClick={doSummary} disabled={busy !== null}>
+              <Button className="mt-4" onClick={doSummary} disabled={busy !== null || !m.content?.trim()}>
                 <Sparkles className="mr-2 h-4 w-4" /> {busy === "sum" ? "A gerar resumo…" : "Gerar resumo"}
               </Button>
             </div>
@@ -136,7 +163,7 @@ function MaterialPage() {
 
         <TabsContent value="quiz" className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={doQuiz} disabled={busy !== null}>
+            <Button onClick={doQuiz} disabled={busy !== null || !m.content?.trim()}>
               <ListChecks className="mr-2 h-4 w-4" /> {busy === "quiz" ? "A criar perguntas…" : quiz ? "Novas perguntas" : "Criar perguntas"}
             </Button>
             {quiz && Object.keys(answers).length === quiz.questions.length && (
@@ -184,8 +211,9 @@ function MaterialPage() {
             <div className="mt-3 flex gap-2"><Button onClick={addNote} disabled={!note.trim()}>{editingNote ? "Atualizar anotação" : "Guardar anotação"}</Button>
             {editingNote && <Button variant="outline" onClick={() => { setEditingNote(null); setNote(""); setNoteTitle(""); }}>Cancelar</Button>}</div>
           </div>
+          {notesError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar as anotações deste PDF.</p>}
           {notes.map(n => <div key={n.id} className="rounded-xl border bg-card p-4">
-            <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{n.title}</h3><Button size="sm" variant="outline" onClick={() => { setEditingNote(n.id); setNote(n.content); setNoteTitle(n.title); }}>Editar</Button></div>
+            <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">{n.title}</h3><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => { setEditingNote(n.id); setNote(n.content); setNoteTitle(n.title); }}>Editar</Button><Button size="sm" variant="ghost" className="text-destructive" onClick={() => void deleteNote(n.id)} aria-label={"Apagar nota " + n.title}><Trash2 className="h-4 w-4"/></Button></div></div>
             <p className="mt-2 whitespace-pre-wrap text-sm">{n.content}</p>
             <div className="mt-2 text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("pt-PT")}</div>
           </div>)}
@@ -193,12 +221,12 @@ function MaterialPage() {
 
         <TabsContent value="pdf" className="mt-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">Estuda com o documento aberto e escreve notas ao lado.</p>
+            <p className="text-sm text-muted-foreground">O leitor recorda a última página e permite pesquisar, sublinhar e exportar páginas com marcações.</p>
             <Button variant="outline" size="sm" onClick={() => setSplitView(v => !v)}>{splitView ? "Ver PDF completo" : "PDF + anotações"}</Button>
           </div>
           <div className={splitView ? "grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]" : ""}>
             <div className="min-w-0">
-              {m.url ? <PdfReader url={m.url} materialId={id} /> : <p className="rounded-xl border p-6 text-muted-foreground">PDF indisponível. Carrega o documento na página Materiais.</p>}
+              {m.url ? <PdfReader url={m.url} materialId={id} /> : <div className="space-y-3 rounded-xl border bg-card p-6"><p className="text-sm text-muted-foreground">Não foi possível obter uma ligação de leitura ao PDF. Se o ficheiro ainda existir, tenta atualizar o acesso.</p><Button variant="outline" size="sm" onClick={() => void refetchMaterial()}><RefreshCw className="mr-2 h-4 w-4"/> Renovar acesso ao PDF</Button></div>}
             </div>
             {splitView && <aside className="min-w-0 space-y-3 rounded-2xl border bg-card p-4">
               <h2 className="text-lg font-bold">As minhas anotações</h2>
