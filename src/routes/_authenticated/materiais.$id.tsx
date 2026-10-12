@@ -97,7 +97,7 @@ function MaterialPage() {
         const key = question.question.trim().toLocaleLowerCase("pt-PT");
         if (existing.has(key)) continue;
         existing.add(key);
-        additions.push({ id: crypto.randomUUID(), question: question.question.trim(), answer: question.options[question.correctIndex] + "\\n\\n" + question.explanation, due: Date.now(), interval: 0, module: m.subject?.startsWith("Módulo ") ? m.subject : "Geral" });
+        additions.push({ id: crypto.randomUUID(), question: question.question.trim(), answer: question.options[question.correctIndex] + "\n\n" + question.explanation, due: Date.now(), interval: 0, module: m.subject?.startsWith("Módulo ") ? m.subject : "Geral" });
       }
       if (!additions.length) { toast.info("Estes cartões já estão guardados, ou não existem perguntas válidas."); return; }
       window.localStorage.setItem("vetestudo-flashcards-v1", JSON.stringify([...old, ...additions]));
