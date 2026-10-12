@@ -18,6 +18,13 @@ on:
       - 'src/components/BrandMark.tsx'
       - 'src/components/BrandMark.test.tsx'
       - 'public/favicon.svg'
+      - 'src/lib/materials.ts'
+      - 'src/lib/materials.test.ts'
+      - 'src/lib/pdf.ts'
+      - 'src/components/PdfReader.tsx'
+      - 'src/components/PdfReader.test.tsx'
+      - 'src/routes/_authenticated/materiais.index.tsx'
+      - 'src/routes/_authenticated/materiais.$id.tsx'
       - '.github/workflows/atlas-verification.yml'
   workflow_dispatch:
 
@@ -33,6 +40,6 @@ jobs:
       - name: Install project dependencies
         run: npm install --no-audit --no-fund
       - name: Run component smoke tests
-        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx
+        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx src/components/BrandMark.test.tsx src/components/PdfReader.test.tsx src/lib/materials.test.ts
       - name: Type-check the application
         run: npx tsc --noEmit
