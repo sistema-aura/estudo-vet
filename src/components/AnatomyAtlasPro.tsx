@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, BookOpen, Bone, Brain, ChevronLeft, ChevronRight, CircleHelp, ExternalLink, Eye, EyeOff, Heart, Layers, Maximize2, Menu, NotebookPen, PawPrint, RotateCcw, Search, Stethoscope, X, ZoomIn, ZoomOut } from "lucide-react";
+import { BookOpen, CircleHelp, ExternalLink, EyeOff, Heart, Layers, Maximize2, Menu, NotebookPen, PawPrint, RotateCcw, Search, Stethoscope, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type Structure = { name: string; system: string; description: string; dog?: string; cat?: string };
 type Clinical = { location: string; function: string; clinical: string };
