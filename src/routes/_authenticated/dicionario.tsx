@@ -73,9 +73,19 @@ function Dicionario() {
   const { data: words = [] } = useQuery({
     queryKey: ["glossary"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("glossary").select("*").order("term");
-      if (error) throw error;
-      return data ?? [];
+      // Supabase defaults to a maximum of 1,000 rows per request.
+      // Fetch every page so dictionaries with 3,000+ terms remain searchable.
+      const all: Array<{ id: string; term: string; definition: string }> = [];
+      const batchSize = 1000;
+      for (let offset = 0; ; offset += batchSize) {
+        const { data, error } = await supabase.from("glossary")
+          .select("id,term,definition").order("term").order("id")
+          .range(offset, offset + batchSize - 1);
+        if (error) throw error;
+        all.push(...(data ?? []));
+        if (!data || data.length < batchSize) break;
+      }
+      return all;
     },
   });
   const results = useMemo(() => {
@@ -162,7 +172,7 @@ function Dicionario() {
         <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
         <Input className="h-11 pl-10 text-base" placeholder="Pesquisar palavra…" value={q} onChange={e => setQ(e.target.value)} />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{results.length} de {words.length} termos</p>
+      <p className="mt-2 text-xs text-muted-foreground">{results.length} de {words.length} termos · Objetivo: 3000 termos</p>
       <dl className="mt-4 divide-y rounded-2xl border bg-card">
         {results.map(w => <div key={w.id} className="group flex items-start justify-between gap-3 p-4">
           <div><dt className="font-display text-lg font-bold text-primary">{w.term}</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{w.definition}</dd></div>
