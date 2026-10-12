@@ -55,9 +55,9 @@ export function normalizeStroke(value: unknown): Stroke | null {
         !Number.isFinite(p.y) || p.x < 0 || p.x > PAGE_WIDTH || p.y < 0 || p.y > PAGE_HEIGHT) return null;
     points.push({ x: p.x, y: p.y });
   }
-  // Legacy strokes used destination-out; skip them rather than painting invisible holes.
-  if (s.tool === "eraser") return null;
-  return { points, color: s.color, width: s.width, tool: s.tool };
+  // Preserve historical eraser strokes as opaque white paint to avoid resurrecting erased writing.
+  // The new editor uses a reversible vector eraser instead of destination-out.
+  return { points, color: s.tool === "eraser" ? "#ffffff" : s.color, width: s.width, tool: s.tool === "eraser" ? "pen" : s.tool };
 }
 function normalizedStrokes(value: unknown, limit = 15000): Stroke[] {
   if (!Array.isArray(value) || value.length > limit) throw new Error("Demasiados traços no caderno.");
