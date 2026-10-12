@@ -8,10 +8,18 @@ export const Route = createFileRoute("/_authenticated/atlas")({
   component: Atlas,
 });
 
-type System = "Esquelético" | "Digestivo" | "Respiratório" | "Cardiovascular" | "Urinário";
+type System = "Esquelético" | "Muscular" | "Nervoso" | "Digestivo" | "Respiratório" | "Cardiovascular" | "Urinário";
 type Structure = { name: string; system: System; x: number; y: number; description: string; dog?: string; cat?: string };
-const systems: System[] = ["Esquelético", "Digestivo", "Respiratório", "Cardiovascular", "Urinário"];
+const systems: System[] = ["Esquelético", "Muscular", "Nervoso", "Digestivo", "Respiratório", "Cardiovascular", "Urinário"];
 const structures: Structure[] = [
+  { name: "Encéfalo", system: "Nervoso", x: 86, y: 116, description: "Integra informação sensorial, coordena movimentos e regula funções vitais. Inclui cérebro, cerebelo e tronco encefálico." },
+  { name: "Medula espinal", system: "Nervoso", x: 257, y: 120, description: "Transmite impulsos entre o encéfalo e o corpo; integra reflexos espinais." },
+  { name: "Nervo ciático", system: "Nervoso", x: 380, y: 226, description: "Nervo periférico importante na inervação do membro pélvico." },
+  { name: "Músculo masséter", system: "Muscular", x: 94, y: 139, description: "Músculo mastigatório responsável por elevar a mandíbula." },
+  { name: "Músculo trapézio", system: "Muscular", x: 181, y: 118, description: "Músculo superficial relacionado com os movimentos da escápula." },
+  { name: "Músculo grande dorsal", system: "Muscular", x: 298, y: 157, description: "Participa na retração do membro torácico e na flexão do ombro." },
+  { name: "Músculo bíceps femoral", system: "Muscular", x: 399, y: 217, description: "Músculo da região caudolateral da coxa, envolvido nos movimentos da anca e do joelho." },
+  { name: "Músculo gastrocnémio", system: "Muscular", x: 412, y: 266, description: "Músculo da região caudal da perna que participa na extensão do tarso." },
   { name: "Crânio", system: "Esquelético", x: 95, y: 106, description: "Conjunto de ossos que protege o encéfalo e sustenta estruturas da face." },
   { name: "Coluna vertebral", system: "Esquelético", x: 285, y: 112, description: "Formada por vértebras cervicais, torácicas, lombares, sacrais e caudais. Protege a medula espinal." },
   { name: "Costelas", system: "Esquelético", x: 225, y: 160, description: "Formam a caixa torácica, protegendo o coração e os pulmões." },
@@ -33,7 +41,7 @@ const structures: Structure[] = [
   { name: "Bexiga urinária", system: "Urinário", x: 411, y: 253, description: "Armazena a urina antes da micção." },
 ];
 const palette: Record<System, string> = {
-  "Esquelético": "#a16207", "Digestivo": "#15803d", "Respiratório": "#0284c7",
+  "Esquelético": "#a16207", "Muscular": "#ea580c", "Nervoso": "#9333ea", "Digestivo": "#15803d", "Respiratório": "#0284c7",
   "Cardiovascular": "#dc2626", "Urinário": "#7c3aed",
 };
 function Atlas() {
@@ -43,23 +51,27 @@ function Atlas() {
   const [search, setSearch] = useState("");
   const [quiz, setQuiz] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [favorites, setFavorites] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("vetestudo-atlas-favorites") || "[]"); } catch { return []; } });
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [target, setTarget] = useState(0);
-  const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim())), [system, search]);
+  const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim()) && (!onlyFavorites || favorites.includes(s.name))), [system, search, favorites, onlyFavorites]);
   const current = visible.find(s => s.name === selected);
   const challenge = structures.filter(s => s.system === system)[target % structures.filter(s => s.system === system).length];
+  function toggleFavorite(name: string) { setFavorites(old => { const next = old.includes(name) ? old.filter(x => x !== name) : [...old, name]; try { localStorage.setItem("vetestudo-atlas-favorites", JSON.stringify(next)); } catch {} return next; }); }
   function choose(s: Structure) {
     if (quiz) {
       setScore(v => ({ correct: v.correct + Number(s.name === challenge.name), total: v.total + 1 }));
       setSelected(s.name);
-      setTarget(v => v + 1);
+      if (s.name === challenge.name) setTarget(v => v + 1);
     } else setSelected(s.name);
   }
   function changeSystem(s: System) { setSystem(s); setSelected(null); setTarget(0); setScore({ correct: 0, total: 0 }); }
   return <div className="mx-auto max-w-6xl space-y-5">
     <div><h1 className="text-3xl font-bold">Atlas interativo de anatomia</h1><p className="mt-1 text-sm text-muted-foreground">Explora estruturas anatómicas de cães e gatos. Ilustrações separadas de cão e gato, sistemas por camadas e exercícios de identificação. Representação esquemática, não à escala.</p></div>
     <div className="flex flex-wrap items-center gap-2">
-      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => setSpecies(s)}>{s}</Button>)}
+      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => { setSpecies(s); setSelected(null); }}>{s}</Button>)}
       <span className="mx-2 h-6 border-l" />
       {systems.map(s => <Button key={s} size="sm" variant={system === s ? "default" : "outline"} onClick={() => changeSystem(s)}>{s}</Button>)}
     </div>
@@ -67,11 +79,14 @@ function Atlas() {
       <section className="min-w-0 space-y-3 rounded-2xl border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">Vista lateral · {species}</h2>
+          <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.max(1, +(z - .25).toFixed(2)))} disabled={zoom === 1}>−</Button>
+          <span className="text-xs tabular-nums">{Math.round(zoom * 100)}%</span>
+          <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.min(2, +(z + .25).toFixed(2)))} disabled={zoom === 2}>+</Button>
           <Button size="sm" variant="outline" onClick={() => setShowLabels(v => !v)}>{showLabels ? "Ocultar legendas" : "Mostrar legendas"}</Button>
           <Button size="sm" variant={quiz ? "default" : "outline"} onClick={() => { setQuiz(v => !v); setScore({ correct: 0, total: 0 }); setTarget(0); setSelected(null); }}>{quiz ? "Terminar exercício" : "Praticar identificação"}</Button>
         </div>
         {quiz && <div className="rounded-lg bg-muted p-3 text-sm"><strong>Encontra: {challenge.name}</strong><span className="ml-3">Acertos: {score.correct}/{score.total}</span></div>}
-        <svg viewBox="0 0 540 350" role="img" aria-label={`Esquema anatómico lateral de ${species.toLowerCase()} com pontos interativos`} className="w-full rounded-xl bg-slate-50">
+        <div className="overflow-auto rounded-xl bg-slate-50"><svg style={{ width: (zoom * 100) + "%", maxWidth: "none" }} viewBox="0 0 540 350" role="img" aria-label={`Esquema anatómico lateral de ${species.toLowerCase()} com pontos interativos`} className="w-full rounded-xl bg-slate-50">
           <defs>
             <linearGradient id="coat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={species === "Cão" ? "#e6b87e" : "#c5d1d9"}/><stop offset="1" stopColor={species === "Cão" ? "#b78353" : "#8d9fae"}/></linearGradient>
             <linearGradient id="organ" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fda4af"/><stop offset="1" stopColor="#e11d48"/></linearGradient>
@@ -98,6 +113,18 @@ function Atlas() {
             <path d="M185 124 Q178 149 197 174 M198 124 Q196 158 220 181 M211 124 Q216 162 241 187 M225 124 Q237 166 259 189 M239 124 Q253 164 277 187 M254 124 Q273 165 292 181"/>
             <path d="M175 126 L154 175 L121 282 M395 151 L375 202 L350 283 M395 154 L411 202 L417 282"/>
             <path d="M72 116 Q88 96 101 117 L98 140 L72 142 Z"/>
+          </g>}
+          {system === "Muscular" && <g fill="#f97316" stroke="#9a3412" strokeWidth="2" opacity=".8">
+            <path d="M122 143 Q164 107 200 127 L180 169 L139 171 Z"/>
+            <path d="M198 130 Q272 112 339 139 L335 181 Q260 192 193 172 Z"/>
+            <path d="M373 153 Q423 162 420 204 L402 249 L382 204 Z"/>
+            <path d="M405 217 Q426 231 422 277 L409 286 L402 248 Z"/>
+            <path d="M83 131 Q102 125 109 143 L91 150 Z"/>
+          </g>}
+          {system === "Nervoso" && <g fill="none" stroke="#a855f7" strokeLinecap="round">
+            <ellipse cx="87" cy="117" rx="19" ry="11" fill="#d8b4fe" strokeWidth="2"/>
+            <path d="M106 119 Q170 111 238 121 T397 141" strokeWidth="6"/>
+            <path d="M173 119 L155 173 L125 267 M218 120 L187 178 L174 267 M361 135 L383 208 L413 277" strokeWidth="3"/>
           </g>}
           {system === "Respiratório" && <g opacity=".86">
             <path d="M99 135 Q137 139 183 153" stroke="#0ea5e9" strokeWidth="9" strokeLinecap="round" fill="none"/>
@@ -126,14 +153,15 @@ function Atlas() {
             <circle cx={s.x} cy={s.y} r="17" fill="transparent"/>
             {showLabels && !quiz && <text x={s.x + 13} y={s.y - 12} fontSize="10" fontWeight="600" fill="#0f172a" stroke="#f8fafc" strokeWidth="3" paintOrder="stroke">{s.name}</text>}
           </g>)}
-        </svg>
+        </svg></div>
         <p className="text-xs text-muted-foreground">Toca num ponto para consultar a estrutura. As posições são aproximadas e destinam-se à aprendizagem inicial.</p>
       </section>
       <section className="space-y-3 rounded-2xl border bg-card p-4">
         <h2 className="font-semibold">Estruturas · {system}</h2>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyFavorites} onChange={e => setOnlyFavorites(e.target.checked)} /> Apenas favoritas ({favorites.length})</label>
         <Input placeholder="Pesquisar estrutura…" value={search} onChange={e => setSearch(e.target.value)} />
         <div className="max-h-64 space-y-1 overflow-auto">{visible.map(s => <button key={s.name} onClick={() => choose(s)} className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${selected === s.name ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{s.name}</button>)}</div>
-        {current && <div className="space-y-2 rounded-xl border p-4"><h3 className="text-lg font-bold">{current.name}</h3><p className="text-sm">{current.description}</p>{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}</div>}
+        {current && <div className="space-y-2 rounded-xl border p-4"><div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">{current.name}</h3><Button size="sm" variant="outline" onClick={() => toggleFavorite(current.name)}>{favorites.includes(current.name) ? "★ Guardada" : "☆ Guardar"}</Button></div><p className="text-sm">{current.description}</p>{(species === "Cão" ? current.dog : current.cat) && <p className="text-sm text-muted-foreground">{species === "Cão" ? current.dog : current.cat}</p>}</div>}
         {!current && <p className="text-sm text-muted-foreground">Seleciona uma estrutura no esquema ou na lista para veres a explicação.</p>}
       </section>
     </div>
