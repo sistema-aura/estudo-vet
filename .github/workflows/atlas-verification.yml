@@ -1,0 +1,27 @@
+name: Atlas verification
+
+on:
+  push:
+    paths:
+      - 'src/components/AnatomyAtlasPro.tsx'
+      - 'src/components/AnatomyAtlasPro.test.tsx'
+      - 'src/routes/_authenticated/atlas.tsx'
+      - 'src/routes/_authenticated.tsx'
+      - '.github/workflows/atlas-verification.yml'
+  workflow_dispatch:
+
+jobs:
+  atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run atlas smoke tests
+        run: npx vitest run src/components/AnatomyAtlasPro.test.tsx
+      - name: Type-check the application
+        run: npx tsc --noEmit
