@@ -44,9 +44,30 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+/**
+ * Cloudflare Workers receives Lovable Cloud secrets as request-scoped env
+ * bindings. Some deployments do not mirror these into process.env, so
+ * TanStack server functions cannot see them without an explicit bridge.
+ *
+ * This runs only in the Worker entrypoint, before TanStack handles the request.
+ * Never serialize or return the bindings to the browser.
+ */
+function attachServerSecrets(bindings: unknown): void {
+  if (!bindings || typeof bindings !== "object") return;
+  const values = bindings as Record<string, unknown>;
+  const names = ["OPENAI_API_KEY", "OPENAI_MODEL"] as const;
+  for (const name of names) {
+    const value = values[name];
+    if (typeof value === "string" && value.trim()) {
+      process.env[name] = value;
+    }
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      attachServerSecrets(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
