@@ -83,11 +83,13 @@ const clinical: Record<string, { location: string; function: string; clinical: s
 const anatomicalPlates = {
   "Cão": [
     { title: "Esqueleto — prancha anatómica", file: "Dog_anatomy_lateral_skeleton_view_(full).jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_lateral_skeleton_view_(full).jpg", credit: "Ellenberger e Baum / Hermann Dittrich · domínio público", system: "Esquelético" },
-    { title: "Esqueleto — diagrama numerado", file: "Skeleton_of_a_dog_diagram.svg", source: "https://commons.wikimedia.org/wiki/File:Skeleton_of_a_dog_diagram.svg", credit: "Przemek Maksim · CC BY-SA 3.0", system: "Esquelético" },
+    { title: "Anatomia craniana", file: "Dog_anatomy_head.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_head.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Esquelético" },
+    { title: "Vista anterior", file: "Dog_anatomy_anterior_view.jpg", source: "https://commons.wikimedia.org/wiki/File:Dog_anatomy_anterior_view.jpg", credit: "Hermann Dittrich / Ellenberger e Baum · obra histórica", system: "Muscular" },
+    { title: "Anatomia do membro", file: "Ellenberger_Leisering_Dog.jpg", source: "https://commons.wikimedia.org/wiki/File:Ellenberger_Leisering_Dog.jpg", credit: "Ellenberger e Leisering · 1908, domínio público nos EUA", system: "Esquelético" },
   ],
   "Gato": [
     { title: "Esqueleto — fotografia de museu", file: "Cat_skeleton.jpg", source: "https://commons.wikimedia.org/wiki/File:Cat_skeleton.jpg", credit: "Museu de Anatomia Veterinária FMVZ USP / Wagner Souza e Silva · CC BY-SA 4.0", system: "Esquelético" },
-    { title: "Esqueleto — diagrama numerado", file: "Skeleton_diagram_of_a_cat.svg", source: "https://commons.wikimedia.org/wiki/File:Skeleton_diagram_of_a_cat.svg", credit: "Przemek Maksim · CC BY-SA 3.0", system: "Esquelético" },
+    { title: "Comparação óssea cão / gato", file: "The_skeletal_structure_of_a_cat_and_a_dog,_Wellcome_L0034200.jpg", source: "https://commons.wikimedia.org/wiki/File:The_skeletal_structure_of_a_cat_and_a_dog,_Wellcome_L0034200.jpg", credit: "Wellcome Collection · CC BY 4.0", system: "Esquelético" },
   ],
 } as const;
 function Atlas() {
@@ -106,6 +108,7 @@ function Atlas() {
   const [studyMode, setStudyMode] = useState(false);
   const [view, setView] = useState<"Pranchas reais" | "Esquema interativo">("Pranchas reais");
   const [plateIndex, setPlateIndex] = useState(0);
+  const [imageFailed, setImageFailed] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [target, setTarget] = useState(0);
   const visible = useMemo(() => structures.filter(s => s.system === system && s.name.toLocaleLowerCase("pt-PT").includes(search.toLocaleLowerCase("pt-PT").trim()) && (!onlyFavorites || favorites.includes(s.name))), [system, search, favorites, onlyFavorites]);
@@ -126,7 +129,7 @@ function Atlas() {
   return <div className="mx-auto max-w-6xl space-y-5">
     <div><h1 className="text-3xl font-bold">Atlas interativo de anatomia</h1><p className="mt-1 text-sm text-muted-foreground">Explora estruturas anatómicas de cães e gatos. Ilustrações separadas de cão e gato, sistemas por camadas e exercícios de identificação. Representação esquemática, não à escala.</p></div>
     <div className="flex flex-wrap items-center gap-2">
-      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => { setSpecies(s); setSelected(null); setPlateIndex(0); }}>{s}</Button>)}
+      {(["Cão", "Gato"] as const).map(s => <Button key={s} size="sm" variant={species === s ? "default" : "outline"} onClick={() => { setSpecies(s); setSelected(null); setPlateIndex(0); setImageFailed(false); }}>{s}</Button>)}
       <span className="mx-2 h-6 border-l" />
       {systems.map(s => <Button key={s} size="sm" variant={system === s ? "default" : "outline"} onClick={() => changeSystem(s)}>{s}</Button>)}
     </div>
@@ -145,10 +148,10 @@ function Atlas() {
           {(["Pranchas reais", "Esquema interativo"] as const).map(v => <Button key={v} size="sm" variant={view === v ? "default" : "outline"} onClick={() => setView(v)}>{v}</Button>)}
         </div>
         {view === "Pranchas reais" && <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Pranchas anatómicas documentadas, com autoria e licença. Nesta fase, a coleção de imagens reais abrange o sistema esquelético. Os pontos interativos estão no separador «Esquema interativo» e não estão sobrepostos às fotografias.</p>
-          <div className="flex flex-wrap gap-2">{anatomicalPlates[species].map((plate, i) => <Button key={plate.file} size="sm" variant={plateIndex === i ? "default" : "outline"} onClick={() => setPlateIndex(i)}>{plate.title}</Button>)}</div>
+          <p className="text-sm text-muted-foreground">Pranchas anatómicas documentadas, com autoria e licença. Nesta fase, a coleção inclui principalmente imagens históricas do esqueleto e de regiões anatómicas, não pranchas modernas de todos os sistemas. Os pontos interativos estão no separador «Esquema interativo» e não estão sobrepostos às fotografias.</p>
+          <div className="flex flex-wrap gap-2">{anatomicalPlates[species].map((plate, i) => <Button key={plate.file} size="sm" variant={plateIndex === i ? "default" : "outline"} onClick={() => { setPlateIndex(i); setImageFailed(false); }}>{plate.title}</Button>)}</div>
           <div className="overflow-auto rounded-xl border bg-white p-2">
-            <img src={"https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(anatomicalPlates[species][plateIndex].file)} alt={anatomicalPlates[species][plateIndex].title + " de " + species} className="mx-auto max-h-[620px] w-auto max-w-full object-contain" loading="lazy" referrerPolicy="no-referrer" />
+            {imageFailed ? <div className="p-8 text-center text-sm">Não foi possível carregar esta imagem. <a className="underline" href={anatomicalPlates[species][plateIndex].source} target="_blank" rel="noopener noreferrer">Abrir original no Wikimedia Commons</a>.</div> : <img onError={() => setImageFailed(true)} src={"https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(anatomicalPlates[species][plateIndex].file)} alt={anatomicalPlates[species][plateIndex].title + " de " + species} className="mx-auto max-h-[620px] w-auto max-w-full object-contain" loading="lazy" referrerPolicy="no-referrer" />}
           </div>
           <p className="text-sm font-medium">{anatomicalPlates[species][plateIndex].title}</p>
           <p className="text-xs text-muted-foreground">Fonte: {anatomicalPlates[species][plateIndex].credit}. <a href={anatomicalPlates[species][plateIndex].source} target="_blank" rel="noopener noreferrer" className="underline">Ver original e licença no Wikimedia Commons</a>.</p>
