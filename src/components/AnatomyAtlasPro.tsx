@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, Bone, Brain, ChevronLeft, ChevronRight, CircleHelp, ExternalLink, Eye, EyeOff, Heart, Layers, Maximize2, Menu, NotebookPen, PawPrint, RotateCcw, Search, Stethoscope, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type Structure = { name: string; system: string; description: string; dog?: string; cat?: string };
@@ -29,7 +29,7 @@ const allPlates: Plate[] = [
   { id: "cat-heart", species: "Gato", system: "Cardiovascular", title: "Coração felino · preparação anatómica", file: "Cat_heart_01.jpg", author: museum, license: "CC BY-SA 4.0", licenseUrl: ccsa, kind: "Preparação anatómica", context: "Coração de gato clarificado pela técnica de Spalteholz, com injeção de gelatina.", structures: ["Coração"], focus: "Coração" },
   { id: "cat-heart-alt", species: "Gato", system: "Cardiovascular", title: "Coração felino · outra vista", file: "Cat_heart_02.jpg", author: museum, license: "CC BY-SA 4.0", licenseUrl: ccsa, kind: "Preparação anatómica", context: "Segunda preparação de coração de gato para comparar a morfologia externa.", structures: ["Coração"], focus: "Coração" },
   { id: "cat-intestine", species: "Gato", system: "Digestivo", title: "Intestino delgado felino · preparação", file: "Cat_small_intestine.jpg", author: museum, license: "CC BY-SA 4.0", licenseUrl: ccsa, kind: "Preparação anatómica", context: "Peça de intestino delgado de gato conservada em formalina.", structures: ["Intestino delgado"], focus: "Intestino delgado" },
-  { id: "cat-eye", species: "Gato", system: "Órgãos dos sentidos", title: "Olho felino · estrutura interna", file: "Cat_eye_(HY).svg", author: "Autor do ficheiro no Wikimedia Commons", license: "CC BY-SA 4.0", licenseUrl: ccsa, kind: "Ilustração científica", context: "Esquema de um olho felino com legendas originais em arménio; usar em conjunto com a ficha em português.", structures: ["Olho"], focus: "Olho" },
+  { id: "cat-eye", species: "Gato", system: "Órgãos dos sentidos", title: "Olho felino · estrutura interna", file: "Cat_eye_(HY).svg", author: "Լիլիթ-Գ-5 / WikiGraphers (Hetq Media Factory)", license: "CC BY-SA 4.0", licenseUrl: ccsa, kind: "Ilustração científica", context: "Esquema de um olho felino com legendas originais em arménio; usar em conjunto com a ficha em português.", structures: ["Olho"], focus: "Olho" },
 ];
 const tone: Record<string, string> = {
   "Esquelético": "🦴", "Muscular": "💪", "Nervoso": "🧠", "Cardiovascular": "🫀",
@@ -125,9 +125,7 @@ export function AnatomyAtlasPro({ systems, structures, clinical }: {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<(typeof tabs)[number]>("Visão geral");
   const [favoriteOnly, setFavoriteOnly] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try { return typeof window === "undefined" ? [] : JSON.parse(window.localStorage.getItem("vetestudo-atlas-favorites") || "[]"); } catch { return []; }
-  });
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [studyMode, setStudyMode] = useState(false);
   const [testMode, setTestMode] = useState(false);
@@ -139,6 +137,10 @@ export function AnatomyAtlasPro({ systems, structures, clinical }: {
   const [showNotes, setShowNotes] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [notesLoaded, setNotesLoaded] = useState(false);
+  const [compare, setCompare] = useState(false);
+  useEffect(() => {
+    try { setFavorites(JSON.parse(window.localStorage.getItem("vetestudo-atlas-favorites") || "[]")); } catch { /* Optional browser storage */ }
+  }, []);
   const library = useMemo(() => allPlates.filter(p => p.species === species), [species]);
   const shelf = library.filter(p => p.system === system);
   const active = library.find(p => p.id === plateId && p.system === system) || shelf[0];
@@ -209,14 +211,16 @@ export function AnatomyAtlasPro({ systems, structures, clinical }: {
           <div className="border-t border-[#2b4156] pt-3"><p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">Ferramentas de estudo</p>
             <button onClick={() => setFavoriteOnly(v => !v)} className={navButton(favoriteOnly)}><Heart size={16}/> Favoritos</button>
             <button onClick={openNotes} className={navButton(showNotes)}><NotebookPen size={16}/> Notas pessoais</button>
+            <button onClick={() => setCompare(v => !v)} className={navButton(compare)}><Layers size={16}/> Comparação cão/gato</button>
             <button onClick={() => { setStudyMode(v => !v); setTestMode(false); }} className={navButton(studyMode)}><EyeOff size={16}/> Modo de estudo</button>
             <button onClick={() => { setTestMode(v => !v); setStudyMode(false); setFeedback(""); setScore({right:0,total:0});setQuestionIndex(0); }} className={navButton(testMode)}><CircleHelp size={16}/> Modo de teste</button>
           </div>
+          <div className="border-t border-[#2b4156] pt-3"><a href="/painel" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-sky-300 hover:bg-[#1a3149]">← Voltar ao VetEstudo</a></div>
         </div>
       </aside>
       <main className="min-w-0 flex-1">
         <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-[#203448] bg-[#081522]/95 px-3 py-2 backdrop-blur-md sm:px-5">
-          <button onClick={() => setMenuOpen(v => !v)} aria-label="Abrir menu" className="rounded-lg p-2 text-slate-300 hover:bg-[#21364a] lg:hidden"><Menu size={19}/></button>
+          <button onClick={() => setMenuOpen(v => !v)} aria-label="Abrir menu" className="rounded-lg p-2 text-slate-300 hover:bg-[#21364a] lg:hidden"><Menu size={19}/></button><a href="/painel" className="hidden text-xs text-sky-300 hover:underline sm:inline lg:hidden">← Painel</a>
           <div className="relative min-w-[180px] flex-1 sm:max-w-[560px]"><Search size={17} className="pointer-events-none absolute left-3 top-2.5 text-slate-400"/><Input aria-label="Pesquisar estrutura anatómica" value={query} onChange={e => setQuery(e.target.value)} placeholder="Procurar estrutura (ex.: coração, masséter, rim…)" className="h-9 border-[#32485f] bg-[#192839] pl-9 text-slate-100 placeholder:text-slate-400"/>
             {allMatches.length > 0 && <div className="absolute left-0 right-0 top-11 z-30 max-h-72 overflow-y-auto rounded-xl border border-[#34506b] bg-[#142639] p-2 shadow-2xl">{allMatches.map(s => <button key={s.name} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-[#23517b]" onClick={() => { choose(s.name); setQuery(""); }}>{s.name}<span className="text-xs text-slate-400">{s.system}</span></button>)}</div>}
           </div>
@@ -243,6 +247,7 @@ export function AnatomyAtlasPro({ systems, structures, clinical }: {
                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-2">{tabs.map(t => <button key={t} onClick={() => setTab(t)} className={"rounded-lg border px-2 py-2 text-xs font-medium " + (tab === t ? "border-blue-500 bg-blue-600 text-white" : "border-[#31485c] bg-[#0b1a2a] text-slate-300 hover:border-blue-500")}>{t}</button>)}</div>
                 {tab === "Visão geral" && <div className="space-y-3 text-sm leading-relaxed text-slate-200"><p>{current.description}</p>{clinical[current.name]?.location && <p><strong className="text-white">Localização:</strong> {clinical[current.name].location}</p>}{(species === "Cão" ? current.dog : current.cat) && <p className="rounded-lg border border-sky-900 bg-sky-950/50 p-3"><strong className="text-sky-300">Particularidades no {species.toLocaleLowerCase("pt-PT")}:</strong> {species === "Cão" ? current.dog : current.cat}</p>}</div>}
                 {tab !== "Visão geral" && <div className="space-y-2">{(profile?.sections || []).filter(s => tab === "Anatomia" ? !["Função","Ação","Relevância clínica"].includes(s.label) : tab === "Função" ? ["Função","Ação"].includes(s.label) : s.label === "Relevância clínica").map(section => <div key={section.label} className="grid grid-cols-[88px_1fr] gap-2 rounded-lg border border-[#294158] bg-[#0a1928] p-3 text-xs leading-relaxed"><strong className="text-sky-300">{section.label}</strong><span className="text-slate-200">{section.value}</span></div>)}{(!profile || !profile.sections.some(s => tab === "Anatomia" ? !["Função","Ação","Relevância clínica"].includes(s.label) : tab === "Função" ? ["Função","Ação"].includes(s.label) : s.label === "Relevância clínica")) && <p className="rounded-lg border border-[#32495e] p-3 text-sm leading-relaxed text-slate-300">{tab === "Função" ? clinical[current.name]?.function || current.description : tab === "Clínica" ? clinical[current.name]?.clinical || "Esta parte da ficha está em revisão científica." : clinical[current.name]?.location || "Origem, inserção, relações e vascularização em revisão científica."}</p>}</div>}
+                {compare && <div className="space-y-2 rounded-xl border border-sky-700/40 bg-[#112d42] p-3"><h3 className="text-sm font-bold text-sky-300">Comparação cão / gato</h3><div className="space-y-2 text-xs leading-relaxed"><p><strong className="text-white">Cão: </strong>{current.dog || "Não há diferença específica documentada nesta ficha."}</p><p><strong className="text-white">Gato: </strong>{current.cat || "Não há diferença específica documentada nesta ficha."}</p></div></div>}
                 {!profile && <p className="border-t border-[#263d52] pt-3 text-xs text-amber-200">Ficha introdutória. Detalhes ainda não sujeitos a revisão anatómica especializada.</p>}
                 {showNotes && <div className="space-y-2 border-t border-[#29445a] pt-3"><label htmlFor="atlas-structure-notes" className="text-sm font-bold">As minhas notas</label><textarea id="atlas-structure-notes" value={notes[noteKey] || ""} onChange={e => updateNote(e.target.value)} className="min-h-28 w-full resize-y rounded-lg border border-[#35506b] bg-[#091725] p-3 text-sm text-white" placeholder="Regista aqui apontamentos pessoais…"/><p className="text-xs text-slate-400">Guardadas apenas neste navegador.</p></div>}
                 {active && active.structures.includes(current.name) && <div className="flex gap-2 border-t border-[#29445a] pt-3">{shelf.filter(p => p.structures.includes(current.name)).slice(0,3).map(p => <button key={p.id} onClick={() => setPlateId(p.id)} title={p.title} className={"w-24 overflow-hidden rounded-lg border text-left " + (active.id === p.id ? "border-blue-400" : "border-[#35506b]")}><img src={imageUrl(p.file,300)} alt="" loading="lazy" className="h-16 w-full object-cover"/><span className="block truncate px-1.5 py-1 text-[10px]">{p.title}</span></button>)}</div>}
