@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, CircleAlert, CloudUpload, FileCheck2, FilePlus2, FileText, FolderClosed, FolderOpen, HardDriveDownload, Layers3, Search, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, CircleAlert, CloudUpload, FileCheck2, FilePlus2, FileText, FolderClosed, FolderOpen, HardDriveDownload, Layers3, Search, ShieldAlert, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/materiais/")({
   component: Materiais,
 });
 
-type UploadStatus = { name: string; position: number; total: number; percent: number; stage: string };
+type UploadStatus = { name: string; size: string; position: number; total: number; percent: number; stage: string };
 type StatusFilter = "todos" | "carregados" | "pendentes";
 const modules = catalog.modules;
 
@@ -85,7 +85,7 @@ function Materiais() {
     let success = 0, skipped = 0, failed = 0, noText = 0;
     for (const [index, file] of files.entries()) {
       try {
-        setUploading({ name: file.name, position: index + 1, total: files.length, percent: index / files.length * 100, stage: "A validar ficheiro" });
+        setUploading({ name: file.name, size: formatFileSize(file.size), position: index + 1, total: files.length, percent: index / files.length * 100, stage: "A validar ficheiro" });
         await assertPdfFile(file);
         const normalized = normalizePdfName(file.name);
         if (names.has(normalized)) { skipped++; continue; }
@@ -96,7 +96,7 @@ function Materiais() {
         try {
           const { extractPdfText } = await import("@/lib/pdf");
           content = await extractPdfText(file, fraction => setUploading({
-            name: file.name, position: index + 1, total: files.length,
+            name: file.name, size: formatFileSize(file.size), position: index + 1, total: files.length,
             percent: (index + Math.max(0, Math.min(1, fraction)) * .75) / files.length * 100,
             stage: "A ler o texto do PDF",
           }));
@@ -104,7 +104,7 @@ function Materiais() {
           extractionFailed = true;
         }
         if (!content.trim()) noText++;
-        setUploading({ name: file.name, position: index + 1, total: files.length, percent: (index + .8) / files.length * 100, stage: "A guardar PDF na biblioteca" });
+        setUploading({ name: file.name, size: formatFileSize(file.size), position: index + 1, total: files.length, percent: (index + .8) / files.length * 100, stage: "A guardar PDF na biblioteca" });
         const storagePath = "shared/" + crypto.randomUUID() + ".pdf";
         const { error: storageError } = await supabase.storage.from("materials").upload(storagePath, file, { contentType: "application/pdf" });
         if (storageError) throw storageError;
@@ -124,7 +124,7 @@ function Materiais() {
         failed++;
         toast.error(file.name + ": " + (error instanceof Error ? error.message : "Não foi possível carregar este PDF."));
       } finally {
-        setUploading({ name: file.name, position: index + 1, total: files.length, percent: (index + 1) / files.length * 100, stage: "Concluído" });
+        setUploading({ name: file.name, size: formatFileSize(file.size), position: index + 1, total: files.length, percent: (index + 1) / files.length * 100, stage: "Concluído" });
       }
     }
     setUploading(null);
@@ -173,11 +173,12 @@ function Materiais() {
         <Button type="button" variant="outline" disabled={uploading !== null} onClick={() => fileRef.current?.click()}><FilePlus2 className="mr-2 h-4 w-4"/> Escolher ficheiros</Button>
       </div>
       {uploading && <div role="status" aria-live="polite" className="mt-4 space-y-2 border-t pt-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate font-semibold">{uploading.name} · {uploading.position}/{uploading.total}</span><span className="text-muted-foreground">{uploading.stage} · {Math.round(uploading.percent)}%</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate font-semibold">{uploading.name} · {uploading.size} · {uploading.position}/{uploading.total}</span><span className="text-muted-foreground">{uploading.stage} · progresso estimado: {Math.round(uploading.percent)}%</span></div>
         <Progress value={uploading.percent} />
       </div>}
     </section>
 
+    <aside className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs leading-relaxed text-foreground"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600"/><div><strong>Privacidade dos documentos:</strong> a configuração atual da base de dados utiliza permissões partilhadas para materiais e notas. Evita carregar dados pessoais de clientes, animais identificáveis ou documentos confidenciais até existir autenticação e controlo de acesso individual.</div></aside>
     {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"><CircleAlert className="h-5 w-5 text-destructive"/> Não foi possível consultar os documentos da biblioteca.<Button size="sm" variant="outline" onClick={() => void refetch()}>Tentar novamente</Button></div>}
     <section aria-label="Resumo da biblioteca" className="grid gap-3 sm:grid-cols-3">
       <div className="flex items-center gap-4 rounded-2xl border bg-card p-4"><span className="rounded-xl bg-primary/10 p-3 text-primary"><BookOpen size={22}/></span><div><div className="text-2xl font-extrabold tabular-nums">{isPending ? "—" : materials.length}</div><div className="text-xs text-muted-foreground">PDFs na biblioteca</div></div></div>
