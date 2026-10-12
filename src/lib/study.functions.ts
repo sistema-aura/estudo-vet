@@ -114,6 +114,18 @@ export const generateFlashcards = createServerFn({ method: "POST" })
     );
   });
 
+/** Explicit diagnostic: called only when the user clicks 'Testar ligação à IA'. */
+export const checkAiConnection = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const { aiText } = await import("./ai.server");
+    const response = await aiText(
+      "Responde em português de Portugal, apenas com a palavra OK.",
+      "Teste de comunicação do VetEstudo. Responde apenas: OK.",
+    );
+    if (!response.trim()) throw new Error("O serviço não devolveu resposta.");
+    return { ok: true };
+  });
+
 export const askTutor = createServerFn({ method: "POST" })
   .inputValidator((input: {
     question: string; materialId?: string; history?: { q: string; a: string }[];
