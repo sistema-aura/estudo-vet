@@ -3,10 +3,10 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 
 function db() {
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(process.env.SUPABASE_URL!, key, {
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  return createClient(process.env["SUPABASE_URL"]!, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: key.startsWith("sb_") ? { fetch: (u: any, i: any = {}) => { const h = new Headers(i.headers); h.delete("Authorization"); h.set("apikey", key); return fetch(u, { ...i, headers: h }); } } : undefined,
+    global: key.startsWith("sb_") ? { fetch: (u: any, i: any = {}) => { const h = new Headers(i.headers); h.delete("Authorization"); h.set("apikey", key); return fetch(u, { ...i, headers: h }); } } : {},
   });
 }
 
