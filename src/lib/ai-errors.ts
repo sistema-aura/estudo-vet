@@ -30,6 +30,28 @@ export function friendlyAiError(error: unknown): string {
   }
   const text = (raw + " " + code + " " + body).toLowerCase();
 
+  // The AI SDK may wrap the original provider error in a cause or return a
+  // response body with a provider code but no HTTP status on the outer error.
+  // Extract only recognized, non-sensitive categories.
+  if (/insufficient_quota|billing_hard_limit_reached|billing_not_active|quota_exceeded/.test(text)) {
+    return "A conta da API OpenAI não tem saldo ou faturação ativa. Confirma os créditos e limites em platform.openai.com.";
+  }
+  if (/invalid_api_key|incorrect.api.key|invalid.authentication|authentication.error/.test(text)) {
+    return "A chave da API OpenAI não foi aceite. Confirma a Secret Key no Lovable Cloud.";
+  }
+  if (/model_not_found|does.not.exist|unsupported.model/.test(text)) {
+    return "O modelo de IA não está disponível na conta OpenAI. Verifica OPENAI_MODEL.";
+  }
+  if (/rate.limit|too.many.requests|requests.per.min/.test(text)) {
+    return "A API OpenAI atingiu temporariamente o limite de pedidos. Aguarda um momento e tenta novamente.";
+  }
+  if (/unsupported.parameter|unsupported.value|invalid.request|invalid.function.call/.test(text)) {
+    return "A API OpenAI rejeitou um parâmetro do pedido. É necessário ajustar a integração do modelo.";
+  }
+  if (/not.found|404/.test(text) && /model|endpoint|responses/.test(text)) {
+    return "O endpoint ou modelo OpenAI configurado não está disponível.";
+  }
+
   if (raw.includes("OPENAI_API_KEY_NOT_CONFIGURED")) {
     return "Falta configurar a chave OPENAI_API_KEY como segredo no servidor do VetEstudo. Nunca a coloques numa variável VITE_ nem no navegador.";
   }
