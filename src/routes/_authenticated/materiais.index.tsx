@@ -169,7 +169,7 @@ function Materiais() {
       onDrop={event => { event.preventDefault(); setDragOver(false); if (!uploading) void upload(Array.from(event.dataTransfer.files)); }}>
       <div className="flex flex-wrap items-center gap-4">
         <span className="rounded-2xl bg-primary/10 p-4 text-primary"><CloudUpload size={28} /></span>
-        <div className="min-w-0 flex-1"><h2 className="font-bold">Arrasta os PDFs para a biblioteca</h2><p className="mt-1 text-sm text-muted-foreground">Ou usa «Carregar PDFs». Aceita vários ficheiros, até 80 MB cada; os PDFs do curso são colocados automaticamente no módulo certo.</p></div>
+        <div className="min-w-0 flex-1"><h2 className="font-bold">Arrasta os PDFs para a biblioteca</h2><p className="mt-1 text-sm text-muted-foreground">Ou usa «Carregar PDFs». Podes selecionar vários ficheiros. A validação local aceita até 80 MB por PDF (o servidor pode ter um limite inferior). Os ficheiros do curso são organizados automaticamente.</p></div>
         <Button type="button" variant="outline" disabled={uploading !== null} onClick={() => fileRef.current?.click()}><FilePlus2 className="mr-2 h-4 w-4"/> Escolher ficheiros</Button>
       </div>
       {uploading && <div role="status" aria-live="polite" className="mt-4 space-y-2 border-t pt-4">
