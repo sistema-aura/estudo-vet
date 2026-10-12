@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Brain, Check, CircleAlert, Download, FileText, GraduationCap, ListChecks, RefreshCw, Sparkles, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import catalog from "@/data/curso-catalogo.json";
+import { catalogueModuleForName, moduleSubject } from "@/lib/materials";
 import { generateQuiz, summarizeMaterial } from "@/lib/study.functions";
 import { Markdown } from "@/components/Markdown";
 import { PdfReader } from "@/components/PdfReader";
@@ -97,7 +99,7 @@ function MaterialPage() {
         const key = question.question.trim().toLocaleLowerCase("pt-PT");
         if (existing.has(key)) continue;
         existing.add(key);
-        additions.push({ id: crypto.randomUUID(), question: question.question.trim(), answer: question.options[question.correctIndex] + "\n\n" + question.explanation, due: Date.now(), interval: 0, module: m.subject?.startsWith("Módulo ") ? m.subject : "Geral" });
+        additions.push({ id: crypto.randomUUID(), question: question.question.trim(), answer: question.options[question.correctIndex] + "\n\n" + question.explanation, due: Date.now(), interval: 0, module: (() => { const found = catalogueModuleForName(m.title, catalog.modules); return found === null ? (m.subject?.startsWith("Módulo ") ? m.subject : "Geral") : moduleSubject(found); })() });
       }
       if (!additions.length) { toast.info("Estes cartões já estão guardados, ou não existem perguntas válidas."); return; }
       window.localStorage.setItem("vetestudo-flashcards-v1", JSON.stringify([...old, ...additions]));
